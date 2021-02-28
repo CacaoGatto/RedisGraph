@@ -47,7 +47,7 @@ typedef struct {
 	EntityID id;
 } GraphEntity;
 
-const AttributeSet GraphEntity_GetAttributeSet
+AttributeSet GraphEntity_GetAttributeSet
 (
 	const GraphEntity *e
 );

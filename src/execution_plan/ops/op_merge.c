@@ -5,7 +5,7 @@
 */
 
 #include "op_merge.h"
-#include "../../RG.h"
+#include "RG.h"
 #include "../../errors.h"
 #include "op_merge_create.h"
 #include "../../query_ctx.h"
@@ -33,12 +33,12 @@ static void _UpdateIndices(GraphContext *gc, Node *n) {
 	Schema_AddNodeToIndices(s, n);
 }
 
-// Update the appropriate property on a graph entity.
+// update the appropriate property on a graph entity
 static int _UpdateProperty(Record r, GraphEntity *ge, EntityUpdateEvalCtx *update_ctx) {
 	int res = 1;
 	SIValue new_value = AR_EXP_Evaluate(update_ctx->exp, r);
 
-	// Emit an error and exit if we're trying to add an invalid type.
+	// emit an error and exit if we're trying to add an invalid type
 	if(!(SI_TYPE(new_value) & SI_VALID_PROPERTY_VALUE)) {
 		res = 0;
 		Error_InvalidPropertyValue();
@@ -46,19 +46,19 @@ static int _UpdateProperty(Record r, GraphEntity *ge, EntityUpdateEvalCtx *updat
 		goto cleanup;
 	}
 
-	// Try to get current property value.
+	// try to get current property value
 	SIValue *old_value = GraphEntity_GetProperty(ge, update_ctx->attribute_id);
 
 	if(old_value == ATTRIBUTE_NOTFOUND) {
-		// Adding a new property; do nothing if its value is NULL.
+		// adding a new property; do nothing if its value is NULL
 		if(SI_TYPE(new_value) == T_NULL) {
 			res = 0;
 			goto cleanup;
 		}
-		// Add new property.
+		// add new property
 		GraphEntity_AddProperty(ge, update_ctx->attribute_id, new_value);
 	} else {
-		// Update property.
+		// update property
 		GraphEntity_SetProperty(ge, update_ctx->attribute_id, new_value);
 	}
 
