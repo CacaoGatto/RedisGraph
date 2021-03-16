@@ -4,19 +4,44 @@
 #include <stdlib.h>
 #include <string.h>
 #include "../redismodule.h"
+#include "../nvm_support/nvm.h"
 
 #ifdef REDIS_MODULE_TARGET /* Set this when compiling your code as a module */
 
 static inline void *rm_malloc(size_t n) {
+#ifdef FULL_NVM
+	return nvm_malloc(n);
+#endif
 	return RedisModule_Alloc(n);
 }
 static inline void *rm_calloc(size_t nelem, size_t elemsz) {
+#ifdef FULL_NVM
+	return nvm_calloc(n);
+#endif
 	return RedisModule_Calloc(nelem, elemsz);
 }
 static inline void *rm_realloc(void *p, size_t n) {
+#ifdef FULL_NVM
+	return nvm_realloc(n);
+#endif
+#ifdef VOLOTILE_USE
+	if (is_nvm_addr) {
+		nvm_realloc(p, n);
+		return;
+	}
+#endif
 	return RedisModule_Realloc(p, n);
 }
 static inline void rm_free(void *p) {
+#ifdef FULL_NVM
+	return nvm_free(n);
+#endif
+#ifdef VOLOTILE_USE
+	if (is_nvm_addr) {
+		nvm_free(p);
+		return;
+	}
+#endif
 	RedisModule_Free(p);
 }
 static inline char *rm_strdup(const char *s) {

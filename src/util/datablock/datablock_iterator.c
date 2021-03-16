@@ -14,7 +14,11 @@
 DataBlockIterator *DataBlockIterator_New(Block *block, uint64_t start_pos, uint64_t end_pos, uint step) {
 	ASSERT(block && end_pos >= start_pos && step >= 1);
 
+#ifdef VOLOTILE_USE
+	DataBlockIterator *iter = nvm_malloc(sizeof(DataBlockIterator));
+#else
 	DataBlockIterator *iter = rm_malloc(sizeof(DataBlockIterator));
+#endif
 	iter->_start_block = block;
 	iter->_current_block = block;
 	iter->_block_pos = start_pos % DATABLOCK_BLOCK_CAP;

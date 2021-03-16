@@ -5,7 +5,7 @@
 */
 
 #include "RG.h"
-#include "datablock.h"
+#include "datablock_t.h"
 #include "datablock_iterator.h"
 #include "../arr.h"
 #include "../rmalloc.h"
@@ -57,7 +57,12 @@ static void _DataBlock_AddBlocks(DataBlock *dataBlock, uint blockCount) {
 // e.g. [3, 7, 2, D, 1, D, 5] where itemCount = 5 and #deleted indices is 2
 // and so it is valid to query the array with idx 6.
 static inline bool _DataBlock_IndexOutOfBounds(const DataBlock *dataBlock, uint64_t idx) {
-	return (idx >= (dataBlock->itemCount + array_len(dataBlock->deletedIdx)));
+	// return (idx >= (dataBlock->itemCount + array_len(dataBlock->deletedIdx)));
+	int out_idx = ITEM_POSITION_WITHIN_BLOCK(idx);
+	int in_idx = ITEM_INDEX_TO_BLOCK_INDEX(idx);
+	block_info* target = (block_info*)(dataBlock->header + out_idx * sizeof(block_info));
+	int char_idx = in_idx % 8;
+	return ((target->bitmap[in_idx / 8] >> (7 - in_idx % 8)) & 1)
 }
 
 static inline DataBlockItemHeader *DataBlock_GetItemHeader(const DataBlock *dataBlock,
@@ -103,7 +108,7 @@ DataBlockIterator *DataBlock_Scan(const DataBlock *dataBlock) {
 	return DataBlockIterator_New(startBlock, 0, endPos, 1);
 }
 
-// Make sure datablock can accommodate at least k items.
+// Make sure datablock can accommodate at least k items and l labels.
 void DataBlock_Accommodate(DataBlock *dataBlock, int64_t k) {
 	// Compute number of free slots.
 	int64_t freeSlotsCount = dataBlock->itemCap - dataBlock->itemCount;
@@ -118,7 +123,7 @@ void DataBlock_Accommodate(DataBlock *dataBlock, int64_t k) {
 void *DataBlock_GetItem(const DataBlock *dataBlock, uint64_t idx) {
 	ASSERT(dataBlock != NULL);
 
-	ASSERT(!_DataBlock_IndexOutOfBounds(dataBlock, idx));
+	ASSERT(_DataBlock_IndexOutOfBounds(dataBlock, idx));
 
 	DataBlockItemHeader *item_header = DataBlock_GetItemHeader(dataBlock, idx);
 
@@ -155,7 +160,7 @@ void *DataBlock_AllocateItem(DataBlock *dataBlock, uint64_t *idx) {
 
 void DataBlock_DeleteItem(DataBlock *dataBlock, uint64_t idx) {
 	ASSERT(dataBlock != NULL);
-	ASSERT(!_DataBlock_IndexOutOfBounds(dataBlock, idx));
+	ASSERT(_DataBlock_IndexOutOfBounds(dataBlock, idx));
 
 	// Return if item already deleted.
 	DataBlockItemHeader *item_header = DataBlock_GetItemHeader(dataBlock, idx);
