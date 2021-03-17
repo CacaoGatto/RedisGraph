@@ -57,7 +57,15 @@ static void _DataBlock_AddBlocks(DataBlock *dataBlock, uint blockCount) {
 // e.g. [3, 7, 2, D, 1, D, 5] where itemCount = 5 and #deleted indices is 2
 // and so it is valid to query the array with idx 6.
 static inline bool _DataBlock_IndexOutOfBounds(const DataBlock *dataBlock, uint64_t idx) {
+#ifdef AdvancedDatablock
+	int out_idx = ITEM_POSITION_WITHIN_BLOCK(idx);
+	int in_idx = ITEM_INDEX_TO_BLOCK_INDEX(idx);
+	block_info* target = (block_info*)(dataBlock->header + out_idx * sizeof(block_info));
+	int char_idx = in_idx % 8;
+	return ((target->bitmap[in_idx / 8] >> (7 - in_idx % 8)) & 1);
+#else
 	return (idx >= (dataBlock->itemCount + array_len(dataBlock->deletedIdx)));
+#endif
 }
 
 static inline DataBlockItemHeader *DataBlock_GetItemHeader(const DataBlock *dataBlock,

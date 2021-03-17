@@ -6,8 +6,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define VOLOTILE_USE
-#define FULL_NVM
+//#define VOLOTILE_USE
+//#define FULL_NVM
 
 void init_memkind(char* path);
 void* nvm_malloc(size_t size);

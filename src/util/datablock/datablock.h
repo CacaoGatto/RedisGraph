@@ -12,13 +12,30 @@
 #include "../block.h"
 #include "./datablock_iterator.h"
 
+// #define AdvancedDatablock
+
 typedef void (*fpDestructor)(void *);
 
 // Number of items in a block. Should always be a power of 2.
 #define DATABLOCK_BLOCK_CAP 16384
 
 // Returns the item header size.
+#ifdef AdvancedDatablock
+
+#define ITEM_HEADER_SIZE 0
+
+// block info
+typedef struct {
+	uint64_t preSum;
+	int label_id;
+	uint8_t bitmap[2048];
+} block_info;
+
+#else
+
 #define ITEM_HEADER_SIZE 1
+
+#endif
 
 // DataBlock item is stored as ||header|data||. This macro retrive the data pointer out of the header pointer.
 #define ITEM_DATA(header) ((void *)((header) + ITEM_HEADER_SIZE))
@@ -49,6 +66,9 @@ typedef struct {
 	uint64_t *deletedIdx;       // Array of free indicies.
 	pthread_mutex_t mutex;      // Mutex guarding from concurent updates.
 	fpDestructor destructor;    // Function pointer to a clean-up function of an item.
+#ifdef AdvancedDatablock
+	block_info *header;			// Array of info of each block.
+#endif
 } DataBlock;
 
 // This struct is for data block item header data.

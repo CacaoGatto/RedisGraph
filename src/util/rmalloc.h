@@ -16,13 +16,13 @@ static inline void *rm_malloc(size_t n) {
 }
 static inline void *rm_calloc(size_t nelem, size_t elemsz) {
 #ifdef FULL_NVM
-	return nvm_calloc(n);
+	return nvm_calloc(nelem, elemsz);
 #endif
 	return RedisModule_Calloc(nelem, elemsz);
 }
 static inline void *rm_realloc(void *p, size_t n) {
 #ifdef FULL_NVM
-	return nvm_realloc(n);
+	return nvm_realloc(p, n);
 #endif
 #ifdef VOLOTILE_USE
 	if (is_nvm_addr) {
@@ -34,7 +34,7 @@ static inline void *rm_realloc(void *p, size_t n) {
 }
 static inline void rm_free(void *p) {
 #ifdef FULL_NVM
-	return nvm_free(n);
+	return nvm_free(p);
 #endif
 #ifdef VOLOTILE_USE
 	if (is_nvm_addr) {
