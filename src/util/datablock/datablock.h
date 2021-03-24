@@ -26,9 +26,10 @@ typedef void (*fpDestructor)(void *);
 
 // block info
 typedef struct {
-	uint64_t preSum;
-	int label_id;
-	uint8_t bitmap[2048];
+	uint64_t count;				// Item count in this block
+	int label_id;				// The label ID of this block
+	uint64_t *deletedIdx;       // Array of free indicies.
+	uint8_t bitmap[2048];		// Mark valid items
 } block_info;
 
 #else
@@ -63,12 +64,13 @@ typedef struct {
 	uint blockCount;            // Number of blocks in datablock.
 	uint itemSize;              // Size of a single item in bytes.
 	Block **blocks;             // Array of blocks.
+#ifdef AdvancedDatablock
+	block_info *header;			// Array of infos of each block.
+#else
 	uint64_t *deletedIdx;       // Array of free indicies.
+#endif
 	pthread_mutex_t mutex;      // Mutex guarding from concurent updates.
 	fpDestructor destructor;    // Function pointer to a clean-up function of an item.
-#ifdef AdvancedDatablock
-	block_info *header;			// Array of info of each block.
-#endif
 } DataBlock;
 
 // This struct is for data block item header data.
