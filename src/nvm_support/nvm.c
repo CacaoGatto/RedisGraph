@@ -9,6 +9,7 @@ void init_memkind(char* path) {
     } else {
         fprintf(stdout, "PMEM kind %s is not on DAX-enabled file system.\n",
                 path);
+        exit(233);
     }
 
     // Create PMEM partition with unlimited size
