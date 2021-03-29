@@ -10,6 +10,7 @@
 //#define FULL_NVM
 
 void init_memkind(char* path);
+int is_nvm_addr(const void* ptr);
 void* nvm_malloc(size_t size);
 void* nvm_calloc(size_t nelem, size_t elemsz);
 void* nvm_realloc(void *p, size_t n);
@@ -22,7 +23,7 @@ typedef struct mk_config {
     struct memkind *pmem_kind;
     int gb_size;
     void *base_addr;
-}
+};
 
 #define PMEM_MAX_SIZE (10 << 30)
 struct memkind *pmem_kind = NULL;

@@ -178,7 +178,7 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
 	int res = init_memkind(nvm_path);
 	if (res) {
 		fprintf(stdout, "Fail to create PMEM room at %s .\n", path);
-		exit(234);
+		exit(233);
 	}
 #endif
 

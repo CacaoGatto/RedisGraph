@@ -9,7 +9,7 @@ void init_memkind(char* path) {
     } else {
         fprintf(stdout, "PMEM kind %s is not on DAX-enabled file system.\n",
                 path);
-        exit(233);
+        return 1;
     }
 
     // Create PMEM partition with unlimited size
@@ -27,7 +27,7 @@ int is_nvm_addr(const void* ptr) {
         return 0;
     if((const char*)ptr < mk_config.base_addr)
         return 0;
-    if(mk_config.base_addr + (mk_config.gb_size << 30) <= (const char*)ptr)
+    if((mk_config.base_addr + (mk_config.gb_size << 30)) <= (const char*)ptr)
         return 0;
     return 1;
 }

@@ -26,8 +26,7 @@ static inline void *rm_realloc(void *p, size_t n) {
 #endif
 #ifdef VOLOTILE_USE
 	if (is_nvm_addr) {
-		nvm_realloc(p, n);
-		return;
+		return nvm_realloc(p, n);
 	}
 #endif
 	return RedisModule_Realloc(p, n);
@@ -38,8 +37,7 @@ static inline void rm_free(void *p) {
 #endif
 #ifdef VOLOTILE_USE
 	if (is_nvm_addr) {
-		nvm_free(p);
-		return;
+		return nvm_free(p);
 	}
 #endif
 	RedisModule_Free(p);
