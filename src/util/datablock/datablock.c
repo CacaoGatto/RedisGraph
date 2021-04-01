@@ -82,8 +82,9 @@ static inline DataBlockItemHeader *DataBlock_GetItemHeader(const DataBlock *data
 DataBlock *DataBlock_New(uint64_t itemCap, uint itemSize, fpDestructor fp) {
 #ifdef VOLOTILE_USE
 	DataBlock *dataBlock = nvm_malloc(sizeof(DataBlock));
-#endif
+#else
 	DataBlock *dataBlock = rm_malloc(sizeof(DataBlock));
+#endif
 	dataBlock->itemCount = 0;
 	dataBlock->itemSize = itemSize + ITEM_HEADER_SIZE;
 	dataBlock->blockCount = 0;

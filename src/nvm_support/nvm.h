@@ -9,24 +9,24 @@
 #define VOLOTILE_USE
 //#define FULL_NVM
 
-void init_memkind(char* path);
-int is_nvm_addr(const void* ptr);
+int init_memkind(char* path);
+int is_nvm_addr(void* ptr);
 void* nvm_malloc(size_t size);
 void* nvm_calloc(size_t nelem, size_t elemsz);
 void* nvm_realloc(void *p, size_t n);
-int nvm_free(void* ptr);
-void fin_memkind();
+void nvm_free(void* ptr);
+int fin_memkind();
 
-#ifdef VOLOTILE_USE
+#if (defined VOLOTILE_USE || defined FULL_NVM)
 
-typedef struct mk_config {
+struct mk_config {
     struct memkind *pmem_kind;
-    int gb_size;
-    void *base_addr;
+    long long gb_size;
 };
 
-#define PMEM_MAX_SIZE (10 << 30)
-struct memkind *pmem_kind = NULL;
+#define PMEM_MAX_SIZE (10L << 30)
+
+extern struct mk_config mk_cfg;
 
 #elif PERSIST_USE
 

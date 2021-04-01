@@ -174,10 +174,10 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
 	setupCrashHandlers(ctx);
 
 #if (defined VOLOTILE_USE || defined FULL_NVM)
-	nvm_path = "/mnt/pmem3/";
-	int res = init_memkind(nvm_path);
-	if (res) {
-		fprintf(stdout, "Fail to create PMEM room at %s .\n", path);
+	char nvm_path[16] = "/mnt/pmem3/";
+	int mk_res = init_memkind(nvm_path);
+	if (mk_res) {
+		fprintf(stdout, "Fail to create PMEM room at %s .\n", nvm_path);
 		exit(233);
 	}
 #endif
