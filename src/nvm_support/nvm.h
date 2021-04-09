@@ -24,7 +24,7 @@ struct mk_config {
     long long gb_size;
 };
 
-#define PMEM_MAX_SIZE (10L << 30)
+#define PMEM_MAX_SIZE (64L << 30)
 
 extern struct mk_config mk_cfg;
 

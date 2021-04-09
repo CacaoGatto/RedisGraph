@@ -63,7 +63,21 @@ static void _PrepareModuleGlobals(RedisModuleCtx *ctx, RedisModuleString **argv,
 
 int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
 	/* TODO: when module unloads call GrB_finalize. */
+
+#if (defined VOLOTILE_USE || defined FULL_NVM)
+	char nvm_path[32] = "/home/yuxiuyuan/mnt";
+	int mk_res = init_memkind(nvm_path);
+	if (mk_res) {
+		fprintf(stdout, "Fail to create PMEM room at %s .\n", nvm_path);
+		exit(233);
+	}
+#endif
+
+#ifdef VOLOTILE_USE
+	GrB_Info res = GxB_init(GrB_NONBLOCKING, nvm_malloc, nvm_calloc, nvm_realloc, nvm_free, true);
+#else
 	GrB_Info res = GxB_init(GrB_NONBLOCKING, rm_malloc, rm_calloc, rm_realloc, rm_free, true);
+#endif
 	if(res != GrB_SUCCESS) {
 		RedisModule_Log(ctx, "warning", "Encountered error initializing GraphBLAS");
 		return REDISMODULE_ERR;
@@ -172,15 +186,6 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
 	}
 
 	setupCrashHandlers(ctx);
-
-#if (defined VOLOTILE_USE || defined FULL_NVM)
-	char nvm_path[16] = "/mnt/pmem3/";
-	int mk_res = init_memkind(nvm_path);
-	if (mk_res) {
-		fprintf(stdout, "Fail to create PMEM room at %s .\n", nvm_path);
-		exit(233);
-	}
-#endif
 
 	return REDISMODULE_OK;
 }
