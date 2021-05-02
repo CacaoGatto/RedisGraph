@@ -194,7 +194,15 @@ GraphContext *RdbLoadGraph_v9(RedisModuleIO *rdb) {
 		ModuleEventHandler_DecreaseDecodingGraphsCount();
 		RedisModuleCtx *ctx = RedisModule_GetContextFromIO(rdb);
 		RedisModule_Log(ctx, "notice", "Done decoding graph %s", gc->graph_name);
+#ifdef NVM_MATRIX
+		GrB_Info res = GxB_init(GrB_NONBLOCKING, rm_malloc, rm_calloc, rm_realloc, rm_free, true);
+		if(res != GrB_SUCCESS) {
+			RedisModule_Log(ctx, "notice", "GxB malloc reset error!!!");
+			exit(233);
+		}
+#endif
 	}
+
 	return gc;
 }
 

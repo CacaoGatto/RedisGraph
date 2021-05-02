@@ -9,35 +9,35 @@
 #ifdef REDIS_MODULE_TARGET /* Set this when compiling your code as a module */
 
 static inline void *rm_malloc(size_t n) {
-#ifdef FULL_NVM
+#ifdef NVM_FULL
 	return nvm_malloc(n);
 #endif
 	return RedisModule_Alloc(n);
 }
 static inline void *rm_calloc(size_t nelem, size_t elemsz) {
-#ifdef FULL_NVM
+#ifdef NVM_FULL
 	return nvm_calloc(nelem, elemsz);
 #endif
 	return RedisModule_Calloc(nelem, elemsz);
 }
 static inline void *rm_realloc(void *p, size_t n) {
-#ifdef FULL_NVM
+#ifdef NVM_FULL
 	return nvm_realloc(p, n);
 #endif
-#ifdef VOLOTILE_USE
-	if (is_nvm_addr) {
-		nvm_realloc(p, n);
-		return;
+#if (defined(NVM_BLOCK) || defined(NVM_MATRIX))
+	if (is_nvm_addr(p)) {
+		return nvm_realloc(p, n);
 	}
 #endif
 	return RedisModule_Realloc(p, n);
 }
 static inline void rm_free(void *p) {
-#ifdef FULL_NVM
-	return nvm_free(p);
+#ifdef NVM_FULL
+	nvm_free(p);
+	return;
 #endif
-#ifdef VOLOTILE_USE
-	if (is_nvm_addr) {
+#if (defined(NVM_BLOCK) || defined(NVM_MATRIX))
+	if (is_nvm_addr(p)) {
 		nvm_free(p);
 		return;
 	}

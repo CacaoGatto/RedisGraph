@@ -1,0 +1,7 @@
+{
+    "files.associations": {
+        "arr.h": "c",
+        "nvm.h": "c",
+        "datablock.h": "c"
+    }
+}

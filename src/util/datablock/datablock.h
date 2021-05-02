@@ -12,29 +12,25 @@
 #include "../block.h"
 #include "./datablock_iterator.h"
 
-// #define AdvancedDatablock
+// #define BITMAP_DATABLOCK
 
 typedef void (*fpDestructor)(void *);
 
 // Number of items in a block. Should always be a power of 2.
 #define DATABLOCK_BLOCK_CAP 16384
+#define ITEM_HEADER_SIZE 1
 
 // Returns the item header size.
-#ifdef AdvancedDatablock
-
-#define ITEM_HEADER_SIZE 0
-
+#ifdef LABEL_DATABLOCK
 // block info
 typedef struct {
 	uint64_t count;				// Item count in this block
 	int label_id;				// The label ID of this block
-	uint64_t *deletedIdx;       // Array of free indicies.
+    uint64_t *deletedIdx;       // Array of free indicies.
+#ifdef BITMAP_DATABLOCK
 	uint8_t bitmap[2048];		// Mark valid items
+#endif
 } block_info;
-
-#else
-
-#define ITEM_HEADER_SIZE 1
 
 #endif
 
@@ -64,11 +60,10 @@ typedef struct {
 	uint blockCount;            // Number of blocks in datablock.
 	uint itemSize;              // Size of a single item in bytes.
 	Block **blocks;             // Array of blocks.
-#ifdef AdvancedDatablock
+#ifdef BITMAP_DATABLOCK
 	block_info *header;			// Array of infos of each block.
-#else
-	uint64_t *deletedIdx;       // Array of free indicies.
 #endif
+	uint64_t *deletedIdx;       // Array of free indicies.
 	pthread_mutex_t mutex;      // Mutex guarding from concurent updates.
 	fpDestructor destructor;    // Function pointer to a clean-up function of an item.
 } DataBlock;
@@ -114,3 +109,12 @@ bool DataBlock_ItemIsDeleted(void *item);
 // Free block.
 void DataBlock_Free(DataBlock *block);
 
+#ifdef BITMAP_DATABLOCK
+
+// Get bitmap at position idx
+bool DataBlock_GetBitmap(const DataBlock *dataBlock, uint64_t idx);
+
+// Set bitmap at position idx
+void DataBlock_SetBitmap(const DataBlock *dataBlock, uint64_t idx, bool bit);
+
+#endif

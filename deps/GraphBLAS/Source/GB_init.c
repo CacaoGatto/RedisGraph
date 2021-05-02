@@ -59,7 +59,7 @@ GrB_Info GB_init            // start up GraphBLAS
     if (GB_Global_GrB_init_called_get ( ))
     { 
         // GrB_init can only be called once
-        return (GrB_INVALID_VALUE) ;
+        // return (GrB_INVALID_VALUE) ;
     }
 
     GB_Global_GrB_init_called_set (true) ;

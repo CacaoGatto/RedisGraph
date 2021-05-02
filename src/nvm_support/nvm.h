@@ -6,26 +6,29 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-//#define VOLOTILE_USE
-//#define FULL_NVM
+//#define NVM_MATRIX
+//#define NVM_BLOCK
+//#define NVM_FULL
 
-void init_memkind(char* path);
+int init_memkind(char* path);
+int is_nvm_addr(void* ptr);
 void* nvm_malloc(size_t size);
 void* nvm_calloc(size_t nelem, size_t elemsz);
 void* nvm_realloc(void *p, size_t n);
-int nvm_free(void* ptr);
-void fin_memkind();
+void nvm_free(void* ptr);
+int fin_memkind();
 
-#ifdef VOLOTILE_USE
+#if (defined NVM_BLOCK || defined NVM_FULL || defined NVM_MATRIX)
 
-typedef struct mk_config {
+#define NVM_INIT
+#define PMEM_MAX_SIZE (64L << 30)
+
+struct mk_config {
     struct memkind *pmem_kind;
-    int gb_size;
-    void *base_addr;
-}
+    long long gb_size;
+};
 
-#define PMEM_MAX_SIZE (10 << 30)
-struct memkind *pmem_kind = NULL;
+extern struct mk_config mk_cfg;
 
 #elif PERSIST_USE
 

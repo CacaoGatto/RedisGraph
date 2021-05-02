@@ -10,12 +10,11 @@
 
 Block *Block_New(uint itemSize, uint capacity) {
 	ASSERT(itemSize > 0);
-#ifdef VOLOTILE_USE
+#ifdef NVM_BLOCK
 	Block *block = nvm_calloc(1, sizeof(Block) + (capacity * itemSize));
-	block->itemSize = itemSize;
-	return block;
-#endif
+#else
 	Block *block = rm_calloc(1, sizeof(Block) + (capacity * itemSize));
+#endif
 	block->itemSize = itemSize;
 	return block;
 }

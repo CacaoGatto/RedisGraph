@@ -54,7 +54,7 @@ bool GraphEntity_AddProperty(GraphEntity *e, Attribute_ID attr_id, SIValue value
 	if(SIValue_IsNull(value)) return false;
 
 	if(e->entity->properties == NULL) {
-#ifdef VOLOTILE_USE
+#ifdef NVM_BLOCK
 		e->entity->properties = nvm_malloc(sizeof(EntityProperty));
 #else
 		e->entity->properties = rm_malloc(sizeof(EntityProperty));

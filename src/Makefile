@@ -25,7 +25,7 @@ CFLAGS += $(DEBUGFLAGS)
 
 # Compile flags for linux / osx
 ifeq ($(uname_S),Linux)
-	SHOBJ_LDFLAGS ?= -Wl,-Bsymbolic,-Bsymbolic-functions -fopenmp -shared -ldl -lpthread
+	SHOBJ_LDFLAGS ?= -Wl,-Bsymbolic,-Bsymbolic-functions -fopenmp -shared -ldl -lpthread -lmemkind -ldaxctl
 	export OS = Linux
 else
 	CFLAGS += -mmacosx-version-min=10.14
@@ -91,6 +91,7 @@ CC_SOURCES += $(wildcard $(SOURCEDIR)/util/object_pool/*.c)
 CC_SOURCES += $(wildcard $(SOURCEDIR)/util/thpool/*.c)
 CC_SOURCES += $(wildcard $(SOURCEDIR)/util/range/*.c)
 CC_SOURCES += $(wildcard $(SOURCEDIR)/util/cache/*.c)
+CC_SOURCES += $(wildcard $(SOURCEDIR)/nvm_support/*.c)
 
 # Convert all sources to .o files
 CC_OBJECTS = $(patsubst %.c, %.o, $(CC_SOURCES) )
@@ -153,7 +154,7 @@ ifeq (,$(wildcard $(REDISEARCH)))
 	cd ../deps/RediSearch; \
 	mkdir -p build; \
 	cd build; \
-	cmake -DRS_FORCE_NO_GITVERSION=ON -DRS_BUILD_STATIC=ON ..; \
+	cmake3 -DRS_FORCE_NO_GITVERSION=ON -DRS_BUILD_STATIC=ON ..; \
 	make;
 endif
 .PHONY: $(REDISEARCH)

@@ -30,9 +30,15 @@ inline void *DataBlock_AllocateItemOutOfOrder(DataBlock *dataBlock, uint64_t idx
 	// Check if idx<=data block's current capacity. If needed, allocate additional blocks.
 	DataBlock_Accommodate(dataBlock, idx);
 	DataBlockItemHeader *item_header = DataBlock_GetItemHeader(dataBlock, idx);
+#ifdef BITMAP_DATABLOCK
+    DataBlock_SetBitmap(dataBlock, idx, 0);
+	dataBlock->itemCount++;
+    return item_header;
+#else
 	MARK_HEADER_AS_NOT_DELETED(item_header);
 	dataBlock->itemCount++;
 	return ITEM_DATA(item_header);
+#endif
 }
 
 inline void DataBlock_MarkAsDeletedOutOfOrder(DataBlock *dataBlock, uint64_t idx) {
@@ -40,6 +46,10 @@ inline void DataBlock_MarkAsDeletedOutOfOrder(DataBlock *dataBlock, uint64_t idx
 	DataBlock_Accommodate(dataBlock, idx);
 	DataBlockItemHeader *item_header = DataBlock_GetItemHeader(dataBlock, idx);
 	// Delete
+#ifdef BITMAP_DATABLOCK
+    DataBlock_SetBitmap(dataBlock, idx, 1);
+#else
 	MARK_HEADER_AS_DELETED(item_header);
+#endif
 	dataBlock->deletedIdx = array_append(dataBlock->deletedIdx, idx);
 }

@@ -63,7 +63,22 @@ static void _PrepareModuleGlobals(RedisModuleCtx *ctx, RedisModuleString **argv,
 
 int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
 	/* TODO: when module unloads call GrB_finalize. */
+
+#if (defined NVM_INIT)
+	char nvm_path[32] = "/home/yuxiuyuan/mnt";
+	int mk_res = init_memkind(nvm_path);
+	if (mk_res) {
+		fprintf(stdout, "Fail to create PMEM room at %s .\n", nvm_path);
+		exit(233);
+	}
+#endif
+
+#ifdef NVM_MATRIX
+    GrB_Info res = GxB_init(GrB_NONBLOCKING, nvm_malloc, nvm_calloc, nvm_realloc, nvm_free, true);
+#else
 	GrB_Info res = GxB_init(GrB_NONBLOCKING, rm_malloc, rm_calloc, rm_realloc, rm_free, true);
+#endif
+
 	if(res != GrB_SUCCESS) {
 		RedisModule_Log(ctx, "warning", "Encountered error initializing GraphBLAS");
 		return REDISMODULE_ERR;

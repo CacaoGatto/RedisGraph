@@ -28,13 +28,39 @@
 #define GET_ITEM_BLOCK(dataBlock, idx) \
     dataBlock->blocks[ITEM_INDEX_TO_BLOCK_INDEX(idx)]
 
+#ifdef BITMAP_DATABLOCK
+
+// Computes the number of blocks required to accommodate n items.
+#define AD_ITEM_COUNT_TO_BLOCK_COUNT(n) \
+    ceil((double)n / DATABLOCK_BLOCK_CAP)
+
+void DataBlock_SetBitmap(const DataBlock *dataBlock,
+                                       uint64_t idx, bool bit) {
+    int out_idx = ITEM_POSITION_WITHIN_BLOCK(idx);
+    int in_idx = ITEM_INDEX_TO_BLOCK_INDEX(idx);
+    block_info* target = dataBlock->header + out_idx;
+    uint8_t mask_bit = 1 << (~in_idx & 7);
+    if (bit) target->bitmap[in_idx >> 3] |= mask_bit;
+    else target->bitmap[in_idx >> 3] &= ~mask_bit;
+}
+
+bool DataBlock_GetBitmap(const DataBlock *dataBlock,
+                                              uint64_t idx) {
+    int out_idx = ITEM_POSITION_WITHIN_BLOCK(idx);
+    int in_idx = ITEM_INDEX_TO_BLOCK_INDEX(idx);
+    block_info* target = dataBlock->header + out_idx;
+    return (target->bitmap[in_idx >> 3] >> (~in_idx & 7) & 1);
+}
+
+#endif
+
 static void _DataBlock_AddBlocks(DataBlock *dataBlock, uint blockCount) {
 	ASSERT(dataBlock && blockCount > 0);
 
 	uint prevBlockCount = dataBlock->blockCount;
 	dataBlock->blockCount += blockCount;
 	if(!dataBlock->blocks)
-#ifdef VOLOTILE_USE
+#ifdef NVM_BLOCK
 		dataBlock->blocks = nvm_malloc(sizeof(Block *) * dataBlock->blockCount);
 #else
 		dataBlock->blocks = rm_malloc(sizeof(Block *) * dataBlock->blockCount);
@@ -57,12 +83,9 @@ static void _DataBlock_AddBlocks(DataBlock *dataBlock, uint blockCount) {
 // e.g. [3, 7, 2, D, 1, D, 5] where itemCount = 5 and #deleted indices is 2
 // and so it is valid to query the array with idx 6.
 static inline bool _DataBlock_IndexOutOfBounds(const DataBlock *dataBlock, uint64_t idx) {
-#ifdef AdvancedDatablock
-	int out_idx = ITEM_POSITION_WITHIN_BLOCK(idx);
-	int in_idx = ITEM_INDEX_TO_BLOCK_INDEX(idx);
-	block_info* target = (block_info*)(dataBlock->header + out_idx * sizeof(block_info));
-	int char_idx = in_idx % 8;
-	return ((target->bitmap[in_idx / 8] >> (7 - in_idx % 8)) & 1);
+#ifdef BITMAP_DATABLOCK
+    // return DataBlock_GetBitmap(dataBlock, idx);
+    return 0;
 #else
 	return (idx >= (dataBlock->itemCount + array_len(dataBlock->deletedIdx)));
 #endif
@@ -80,10 +103,11 @@ static inline DataBlockItemHeader *DataBlock_GetItemHeader(const DataBlock *data
 //------------------------------------------------------------------------------
 
 DataBlock *DataBlock_New(uint64_t itemCap, uint itemSize, fpDestructor fp) {
-#ifdef VOLOTILE_USE
+#ifdef NVM_BLOCK
 	DataBlock *dataBlock = nvm_malloc(sizeof(DataBlock));
-#endif
+#else
 	DataBlock *dataBlock = rm_malloc(sizeof(DataBlock));
+#endif
 	dataBlock->itemCount = 0;
 	dataBlock->itemSize = itemSize + ITEM_HEADER_SIZE;
 	dataBlock->blockCount = 0;
@@ -93,7 +117,14 @@ DataBlock *DataBlock_New(uint64_t itemCap, uint itemSize, fpDestructor fp) {
 	int res = pthread_mutex_init(&dataBlock->mutex, NULL);
 	UNUSED(res);
 	ASSERT(res == 0);
+#ifdef BITMAP_DATABLOCK
+	dataBlock->header = NULL;
+#endif
+#ifdef LABEL_DATABLOCK
+    _DataBlock_AddBlocks(dataBlock, ITEM_COUNT_TO_BLOCK_COUNT(itemCap));
+#else
 	_DataBlock_AddBlocks(dataBlock, ITEM_COUNT_TO_BLOCK_COUNT(itemCap));
+#endif
 	return dataBlock;
 }
 
@@ -130,10 +161,15 @@ void *DataBlock_GetItem(const DataBlock *dataBlock, uint64_t idx) {
 
 	DataBlockItemHeader *item_header = DataBlock_GetItemHeader(dataBlock, idx);
 
+#ifdef BITMAP_DATABLOCK
+    if (DataBlock_GetBitmap(dataBlock, idx)) return NULL;
+    return item_header;
+#else
 	// Incase item is marked as deleted, return NULL.
 	if(IS_ITEM_DELETED(item_header)) return NULL;
 
 	return ITEM_DATA(item_header);
+#endif
 }
 
 void *DataBlock_AllocateItem(DataBlock *dataBlock, uint64_t *idx) {
@@ -156,9 +192,42 @@ void *DataBlock_AllocateItem(DataBlock *dataBlock, uint64_t *idx) {
 	if(idx) *idx = pos;
 
 	DataBlockItemHeader *item_header = DataBlock_GetItemHeader(dataBlock, pos);
+#ifdef BITMAP_DATABLOCK
+    DataBlock_SetBitmap(dataBlock, pos, 0);
+    return item_header;
+#else
 	MARK_HEADER_AS_NOT_DELETED(item_header);
-
 	return ITEM_DATA(item_header);
+#endif
+}
+
+void *DataBlock_AllocateItemLabeled(DataBlock *dataBlock, uint64_t *idx) {
+    // Make sure we've got room for items.
+    if(dataBlock->itemCount >= dataBlock->itemCap) {
+        // Allocate twice as much items then we currently hold.
+        uint newCap = dataBlock->itemCount * 2;
+        uint requiredAdditionalBlocks = ITEM_COUNT_TO_BLOCK_COUNT(newCap) - dataBlock->blockCount;
+        _DataBlock_AddBlocks(dataBlock, requiredAdditionalBlocks);
+    }
+
+    // Get index into which to store item,
+    // prefer reusing free indicies.
+    uint pos = dataBlock->itemCount;
+    if(array_len(dataBlock->deletedIdx) > 0) {
+        pos = array_pop(dataBlock->deletedIdx);
+    }
+    dataBlock->itemCount++;
+
+    if(idx) *idx = pos;
+
+    DataBlockItemHeader *item_header = DataBlock_GetItemHeader(dataBlock, pos);
+#ifdef BITMAP_DATABLOCK
+    DataBlock_SetBitmap(dataBlock, pos, 0);
+    return item_header;
+#else
+    MARK_HEADER_AS_NOT_DELETED(item_header);
+    return ITEM_DATA(item_header);
+#endif
 }
 
 void DataBlock_DeleteItem(DataBlock *dataBlock, uint64_t idx) {
@@ -167,15 +236,27 @@ void DataBlock_DeleteItem(DataBlock *dataBlock, uint64_t idx) {
 
 	// Return if item already deleted.
 	DataBlockItemHeader *item_header = DataBlock_GetItemHeader(dataBlock, idx);
+#ifdef BITMAP_DATABLOCK
+    if (DataBlock_GetBitmap(dataBlock, idx)) return;
+#else
 	if(IS_ITEM_DELETED(item_header)) return;
+#endif
 
 	// Call item destructor.
 	if(dataBlock->destructor) {
+#ifdef BITMAP_DATABLOCK
+        unsigned char *item = (unsigned char *)(item_header);
+#else
 		unsigned char *item = ITEM_DATA(item_header);
+#endif
 		dataBlock->destructor(item);
 	}
 
+#ifdef BITMAP_DATABLOCK
+    DataBlock_SetBitmap(dataBlock, idx, 1);
+#else
 	MARK_HEADER_AS_DELETED(item_header);
+#endif
 
 	/* DataBlock_DeleteItem should be thread-safe as it's being called
 	 * from GraphBLAS concurent operations, e.g. GxB_SelectOp.
@@ -196,8 +277,12 @@ uint DataBlock_DeletedItemsCount(const DataBlock *dataBlock) {
 }
 
 inline bool DataBlock_ItemIsDeleted(void *item) {
+#ifdef BITMAP_DATABLOCK
+    ASSERT(233);
+#else
 	DataBlockItemHeader *header = GET_ITEM_HEADER(item);
 	return IS_ITEM_DELETED(header);
+#endif
 }
 
 void DataBlock_Free(DataBlock *dataBlock) {
