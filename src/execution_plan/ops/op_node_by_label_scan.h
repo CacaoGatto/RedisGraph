@@ -23,6 +23,9 @@ typedef struct {
 	unsigned int nodeRecIdx;    /* Node position within record. */
 	UnsignedRange *id_range;    /* ID range to iterate over. */
 	GxB_MatrixTupleIter *iter;
+#ifdef LABEL_ITERATOR
+    DataBlockIterator *iter_label;
+#endif
 	Record child_record;        /* The Record this op acts on if it is not a tap. */
 } NodeByLabelScan;
 

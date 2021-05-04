@@ -8,6 +8,9 @@
 
 #include <stdint.h>
 #include "../block.h"
+#ifdef LABEL_ITERATOR
+#include "datablock.h"
+#endif
 
 /* Datablock iterator iterates over items within a datablock. */
 
@@ -48,3 +51,14 @@ void DataBlockIterator_Reset(DataBlockIterator *iter);
 // Free iterator.
 void DataBlockIterator_Free(DataBlockIterator *iter);
 
+#ifdef LABEL_ITERATOR
+
+void DataBlockLabelIterator_iterate_range(DataBlockIterator *iter, uint64_t beginID, uint64_t endID);
+
+// Returns the next item, unless we've reached the end
+// in which case NULL is returned.
+// if `id` is provided and an item is located
+// `id` will be set to the returned item index
+void *DataBlockLabelIterator_Next(DataBlockIterator *iter, int label, uint64_t *id);
+
+#endif

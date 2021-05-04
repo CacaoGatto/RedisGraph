@@ -13,6 +13,7 @@
 
 #ifdef LABEL_DATABLOCK
 #define UNKNOWN_LABEL -2
+#define LABEL_ITERATOR
 #endif
 
 /* The Block is a type-agnostic block of continuous memory used to hold items of the same type.
@@ -20,6 +21,10 @@
 typedef struct Block {
 	size_t itemSize;        // Size of a single item in bytes.
 	struct Block *next;     // Pointer to next block.
+#ifdef LABEL_ITERATOR
+    void *header;
+    int index;
+#endif
 	unsigned char data[];   // Item array. MUST BE LAST MEMBER OF THE STRUCT!
 } Block;
 
