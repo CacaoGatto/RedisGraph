@@ -59,18 +59,33 @@ static void _DataBlock_AddBlocks(DataBlock *dataBlock, uint blockCount) {
 
 	uint prevBlockCount = dataBlock->blockCount;
 	dataBlock->blockCount += blockCount;
-	if(!dataBlock->blocks)
+	if(!dataBlock->blocks) {
 #ifdef NVM_BLOCK
-		dataBlock->blocks = nvm_malloc(sizeof(Block *) * dataBlock->blockCount);
+        dataBlock->blocks = nvm_malloc(sizeof(Block *) * dataBlock->blockCount);
 #else
-		dataBlock->blocks = rm_malloc(sizeof(Block *) * dataBlock->blockCount);
+        dataBlock->blocks = rm_malloc(sizeof(Block *) * dataBlock->blockCount);
 #endif
-	else
+#ifdef LABEL_DATABLOCK
+        dataBlock->header = rm_malloc(sizeof(block_info) * dataBlock->blockCount);
+#endif
+    }
+	else {
 		dataBlock->blocks = rm_realloc(dataBlock->blocks, sizeof(Block *) * dataBlock->blockCount);
+#ifdef LABEL_DATABLOCK
+		dataBlock->header = rm_realloc(dataBlock->header, sizeof(block_info) * dataBlock->blockCount);
+#endif
+	}
 
 	uint i;
 	for(i = prevBlockCount; i < dataBlock->blockCount; i++) {
 		dataBlock->blocks[i] = Block_New(dataBlock->itemSize, DATABLOCK_BLOCK_CAP);
+#ifdef LABEL_DATABLOCK
+		dataBlock->header[i].count = 0;
+		dataBlock->header[i].label_id = UNKNOWN_LABEL;
+		dataBlock->header[i].label_next = -1;
+		dataBlock->header[i].index = -1;
+		dataBlock->header[i].deletedIdx = NULL;
+#endif
 		if(i > 0) dataBlock->blocks[i - 1]->next = dataBlock->blocks[i];
 	}
 	dataBlock->blocks[i - 1]->next = NULL;
@@ -117,10 +132,8 @@ DataBlock *DataBlock_New(uint64_t itemCap, uint itemSize, fpDestructor fp) {
 	int res = pthread_mutex_init(&dataBlock->mutex, NULL);
 	UNUSED(res);
 	ASSERT(res == 0);
-#ifdef BITMAP_DATABLOCK
-	dataBlock->header = NULL;
-#endif
 #ifdef LABEL_DATABLOCK
+    dataBlock->header = NULL;
     _DataBlock_AddBlocks(dataBlock, ITEM_COUNT_TO_BLOCK_COUNT(itemCap));
 #else
 	_DataBlock_AddBlocks(dataBlock, ITEM_COUNT_TO_BLOCK_COUNT(itemCap));
@@ -201,35 +214,6 @@ void *DataBlock_AllocateItem(DataBlock *dataBlock, uint64_t *idx) {
 #endif
 }
 
-void *DataBlock_AllocateItemLabeled(DataBlock *dataBlock, uint64_t *idx) {
-    // Make sure we've got room for items.
-    if(dataBlock->itemCount >= dataBlock->itemCap) {
-        // Allocate twice as much items then we currently hold.
-        uint newCap = dataBlock->itemCount * 2;
-        uint requiredAdditionalBlocks = ITEM_COUNT_TO_BLOCK_COUNT(newCap) - dataBlock->blockCount;
-        _DataBlock_AddBlocks(dataBlock, requiredAdditionalBlocks);
-    }
-
-    // Get index into which to store item,
-    // prefer reusing free indicies.
-    uint pos = dataBlock->itemCount;
-    if(array_len(dataBlock->deletedIdx) > 0) {
-        pos = array_pop(dataBlock->deletedIdx);
-    }
-    dataBlock->itemCount++;
-
-    if(idx) *idx = pos;
-
-    DataBlockItemHeader *item_header = DataBlock_GetItemHeader(dataBlock, pos);
-#ifdef BITMAP_DATABLOCK
-    DataBlock_SetBitmap(dataBlock, pos, 0);
-    return item_header;
-#else
-    MARK_HEADER_AS_NOT_DELETED(item_header);
-    return ITEM_DATA(item_header);
-#endif
-}
-
 void DataBlock_DeleteItem(DataBlock *dataBlock, uint64_t idx) {
 	ASSERT(dataBlock != NULL);
 	ASSERT(!_DataBlock_IndexOutOfBounds(dataBlock, idx));
@@ -295,4 +279,99 @@ void DataBlock_Free(DataBlock *dataBlock) {
 	ASSERT(res == 0);
 	rm_free(dataBlock);
 }
+
+#ifdef LABEL_DATABLOCK
+
+void _DataBlock_InitBlock_Label(block_info *header, int label, int index, int next) {
+    header->count = 0;
+    header->label_id = label;
+    header->index = index;
+    header->label_next = next;
+    if (!header->deletedIdx) header->deletedIdx = array_new(uint64_t, 128);
+}
+
+void _DataBlock_AddBlocks_Label(DataBlock *dataBlock, uint blockCount, int last, int label) {
+	ASSERT(dataBlock && blockCount > 0);
+
+	uint prevBlockCount = dataBlock->blockCount;
+	if (last > -1) dataBlock->header[last].label_next = prevBlockCount;
+	dataBlock->blockCount += blockCount;
+	if(!dataBlock->blocks) {
+#ifdef NVM_BLOCK
+        dataBlock->blocks = nvm_malloc(sizeof(Block *) * dataBlock->blockCount);
+#else
+        dataBlock->blocks = rm_malloc(sizeof(Block *) * dataBlock->blockCount);
+#endif
+        dataBlock->header = rm_malloc(sizeof(block_info) * dataBlock->blockCount);
+    }
+	else {
+		dataBlock->blocks = rm_realloc(dataBlock->blocks, sizeof(Block *) * dataBlock->blockCount);
+		dataBlock->header = rm_realloc(dataBlock->header, sizeof(block_info) * dataBlock->blockCount);
+	}
+
+	uint i;
+	for(i = prevBlockCount; i < dataBlock->blockCount; i++) {
+		dataBlock->blocks[i] = Block_New(dataBlock->itemSize, DATABLOCK_BLOCK_CAP);
+        _DataBlock_InitBlock_Label(&(dataBlock->header[i]), label, last + i - prevBlockCount + 1, i + 1);
+		if(i > 0) {
+			dataBlock->blocks[i - 1]->next = dataBlock->blocks[i];
+		}
+	}
+	dataBlock->blocks[i - 1]->next = NULL;
+	dataBlock->header[i - 1].label_next = -1;
+
+	dataBlock->itemCap = dataBlock->blockCount * DATABLOCK_BLOCK_CAP;
+}
+
+int DataBlock_GetFirstBlockNumByLabel(DataBlock *dataBlock, int label) {
+    uint blockCount = dataBlock->blockCount;
+    int i;
+    for (i = 0; i < blockCount; i++) {
+        if (dataBlock->header[i].label_id == label) return i;
+        if (dataBlock->header[i].label_id == UNKNOWN_LABEL) goto INIT_NEW;
+    }
+    _DataBlock_AddBlocks(dataBlock, 1);
+    INIT_NEW:
+    _DataBlock_InitBlock_Label(&(dataBlock->header[i]), label, 0, -1);
+    return i;
+}
+
+int DataBlock_GetFirstAvailBlockNumByLabel(DataBlock *dataBlock, int label) {
+	int idx = DataBlock_GetFirstBlockNumByLabel(dataBlock, label);
+    while (idx > -1) {
+        if (dataBlock->header[idx].count >= DATABLOCK_BLOCK_CAP && array_len(dataBlock->header[idx].deletedIdx) <= 0) {
+            if (dataBlock->header[idx].label_next == -1) {
+                _DataBlock_AddBlocks_Label(dataBlock, dataBlock->header[idx].index + 1, idx, label);
+            }
+            idx = dataBlock->header[idx].label_next;
+        } else return idx;
+    }
+    return -1;
+}
+
+uint64_t DataBlock_AllocateItem_Label(DataBlock *dataBlock, int label) {
+    // Get Block Index
+    int block_idx = DataBlock_GetFirstAvailBlockNumByLabel(dataBlock, label);
+    ASSERT(block_idx > -1);
+
+    // Get index into which to store item,
+    // prefer reusing free indicies.
+    uint pos = dataBlock->header[block_idx].count + block_idx * DATABLOCK_BLOCK_CAP;
+    if(array_len(dataBlock->header[block_idx].deletedIdx) > 0) {
+        pos = array_pop(dataBlock->header[block_idx].deletedIdx);
+    }
+    dataBlock->itemCount++;
+    dataBlock->header[block_idx].count++;
+
+    DataBlockItemHeader *item_header = DataBlock_GetItemHeader(dataBlock, pos);
+#ifdef BITMAP_DATABLOCK
+    DataBlock_SetBitmap(dataBlock, pos, 0);
+    return item_header;
+#else
+    MARK_HEADER_AS_NOT_DELETED(item_header);
+    return pos;
+#endif
+}
+
+#endif
 

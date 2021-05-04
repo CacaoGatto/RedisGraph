@@ -9,15 +9,16 @@
 #include <stdlib.h>
 #include <sys/types.h>
 
-// #define LABEL_DATABLOCK
+#define LABEL_DATABLOCK
+
+#ifdef LABEL_DATABLOCK
+#define UNKNOWN_LABEL -2
+#endif
 
 /* The Block is a type-agnostic block of continuous memory used to hold items of the same type.
  * Each block has a next pointer to another block, or NULL if this is the last block. */
 typedef struct Block {
 	size_t itemSize;        // Size of a single item in bytes.
-#ifdef LABEL_DATABLOCK
-    int label;
-#endif
 	struct Block *next;     // Pointer to next block.
 	unsigned char data[];   // Item array. MUST BE LAST MEMBER OF THE STRUCT!
 } Block;

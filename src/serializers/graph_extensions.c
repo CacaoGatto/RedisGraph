@@ -21,7 +21,19 @@ inline void Serializer_Graph_MarkNodeDeleted(Graph *g, NodeID id) {
 
 void Serializer_Graph_SetNode(Graph *g, NodeID id, int label, Node *n) {
 	ASSERT(g);
-
+#ifdef LABEL_DATABLOCK
+	NodeID id_new;
+	Entity *en = DataBlock_AllocateItemOutOfOrder_Label(g->nodes, &id_new, label);
+	en->prop_count = 0;
+	en->properties = NULL;
+	n->id = id_new;
+	n->entity = en;
+	if(label != GRAPH_NO_LABEL) {
+		// Set matrix at position [id, id]
+		GrB_Matrix m = Graph_GetLabelMatrix(g, label);
+		GrB_Matrix_setElement_BOOL(m, true, id_new, id_new);
+	}
+#else
 	Entity *en = DataBlock_AllocateItemOutOfOrder(g->nodes, id);
 	en->prop_count = 0;
 	en->properties = NULL;
@@ -32,12 +44,24 @@ void Serializer_Graph_SetNode(Graph *g, NodeID id, int label, Node *n) {
 		GrB_Matrix m = Graph_GetLabelMatrix(g, label);
 		GrB_Matrix_setElement_BOOL(m, true, id, id);
 	}
+#endif
 }
 
 // Set a given edge in the graph - Used for deserialization of graph.
 void Serializer_Graph_SetEdge(Graph *g, EdgeID edge_id, NodeID src, NodeID dest, int r, Edge *e) {
 	GrB_Info info;
-
+#ifdef LABEL_DATABLOCK
+	EdgeID id_new;
+    Entity *en = DataBlock_AllocateItemOutOfOrder_Label(g->edges, &id_new, r);
+    en->prop_count = 0;
+    en->properties = NULL;
+    e->id = id_new;
+    e->entity = en;
+    e->relationID = r;
+    e->srcNodeID = src;
+    e->destNodeID = dest;
+    Graph_FormConnection(g, src, dest, id_new, r);
+#else
 	Entity *en = DataBlock_AllocateItemOutOfOrder(g->edges, edge_id);
 	en->prop_count = 0;
 	en->properties = NULL;
@@ -47,6 +71,7 @@ void Serializer_Graph_SetEdge(Graph *g, EdgeID edge_id, NodeID src, NodeID dest,
 	e->srcNodeID = src;
 	e->destNodeID = dest;
 	Graph_FormConnection(g, src, dest, edge_id, r);
+#endif
 }
 
 

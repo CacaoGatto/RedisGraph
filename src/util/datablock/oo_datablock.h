@@ -27,3 +27,8 @@ void *DataBlock_AllocateItemOutOfOrder(DataBlock *dataBlock, uint64_t idx);
  * 1. Item distructor is not invoked in this call.
  * 2. This call does not decrease the number of items in the data block. */
 void DataBlock_MarkAsDeletedOutOfOrder(DataBlock *dataBlock, uint64_t idx);
+
+#ifdef LABEL_DATABLOCK
+void *DataBlock_AllocateItemOutOfOrder_Label(DataBlock *dataBlock, uint64_t *id, int label);
+void DataBlock_MarkAsDeletedOutOfOrder_Label(DataBlock *dataBlock, uint64_t idx);
+#endif

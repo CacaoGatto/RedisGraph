@@ -6,6 +6,10 @@
 
 #include "decode_v9.h"
 
+#ifdef LABEL_DATABLOCK
+ConversionInfo_t *conv_info;
+#endif
+
 // Module event handler functions declarations.
 void ModuleEventHandler_IncreaseDecodingGraphsCount(void);
 void ModuleEventHandler_DecreaseDecodingGraphsCount(void);
@@ -194,6 +198,10 @@ GraphContext *RdbLoadGraph_v9(RedisModuleIO *rdb) {
 		ModuleEventHandler_DecreaseDecodingGraphsCount();
 		RedisModuleCtx *ctx = RedisModule_GetContextFromIO(rdb);
 		RedisModule_Log(ctx, "notice", "Done decoding graph %s", gc->graph_name);
+#ifdef LABEL_DATABLOCK
+        rm_free(conv_info->ref_pool);
+        rm_free(conv_info);
+#endif
 #ifdef NVM_MATRIX
 		GrB_Info res = GxB_init(GrB_NONBLOCKING, rm_malloc, rm_calloc, rm_realloc, rm_free, true);
 		if(res != GrB_SUCCESS) {

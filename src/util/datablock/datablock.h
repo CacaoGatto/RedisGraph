@@ -24,8 +24,10 @@ typedef void (*fpDestructor)(void *);
 #ifdef LABEL_DATABLOCK
 // block info
 typedef struct {
-	uint64_t count;				// Item count in this block
+	int count;				// Item count in this block
 	int label_id;				// The label ID of this block
+    int label_next;	        	// Next block with this label, -1 for last
+	int index;             // The block index of this label
     uint64_t *deletedIdx;       // Array of free indicies.
 #ifdef BITMAP_DATABLOCK
 	uint8_t bitmap[2048];		// Mark valid items
@@ -60,7 +62,7 @@ typedef struct {
 	uint blockCount;            // Number of blocks in datablock.
 	uint itemSize;              // Size of a single item in bytes.
 	Block **blocks;             // Array of blocks.
-#ifdef BITMAP_DATABLOCK
+#ifdef LABEL_DATABLOCK
 	block_info *header;			// Array of infos of each block.
 #endif
 	uint64_t *deletedIdx;       // Array of free indicies.
@@ -116,5 +118,13 @@ bool DataBlock_GetBitmap(const DataBlock *dataBlock, uint64_t idx);
 
 // Set bitmap at position idx
 void DataBlock_SetBitmap(const DataBlock *dataBlock, uint64_t idx, bool bit);
+
+#endif
+
+#ifdef LABEL_DATABLOCK
+
+Block *DataBlock_GetFirstBlockByLabel(DataBlock *dataBlock, int label);
+
+uint64_t DataBlock_AllocateItem_Label(DataBlock *dataBlock, int label);
 
 #endif

@@ -57,3 +57,7 @@ deps/GraphBLAS/Config/GraphBLAS.h.tmp
 
 # local/remote benchmark result files
 tests/benchmarks/*.json
+
+# toolFiles
+.vscode/
+.idea/

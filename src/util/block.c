@@ -21,6 +21,10 @@ Block *Block_New(uint itemSize, uint capacity) {
 
 void Block_Free(Block *block) {
 	ASSERT(block != NULL);
+#ifdef NVM_BLOCK
+	nvm_free(block);
+#else
 	rm_free(block);
+#endif
 }
 

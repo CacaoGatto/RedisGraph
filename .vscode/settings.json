@@ -2,6 +2,13 @@
     "files.associations": {
         "arr.h": "c",
         "nvm.h": "c",
-        "datablock.h": "c"
+        "datablock.h": "c",
+        "oo_datablock.h": "c",
+        "rmalloc.h": "c",
+        "datablock_iterator.h": "c",
+        "block.h": "c",
+        "stdlib.h": "c",
+        "rg.h": "c",
+        "redismodule.h": "c"
     }
 }

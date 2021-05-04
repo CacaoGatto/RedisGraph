@@ -53,3 +53,20 @@ inline void DataBlock_MarkAsDeletedOutOfOrder(DataBlock *dataBlock, uint64_t idx
 #endif
 	dataBlock->deletedIdx = array_append(dataBlock->deletedIdx, idx);
 }
+
+#ifdef LABEL_DATABLOCK
+inline void *DataBlock_AllocateItemOutOfOrder_Label(DataBlock *dataBlock, uint64_t *id, int label) {
+	// Check if idx<=data block's current capacity. If needed, allocate additional blocks.
+	*id = DataBlock_AllocateItem_Label(dataBlock, label);
+	DataBlockItemHeader *item_header = DataBlock_GetItemHeader(dataBlock, *id);
+#ifdef BITMAP_DATABLOCK
+    DataBlock_SetBitmap(dataBlock, idx, 0);
+	dataBlock->itemCount++;
+    return item_header;
+#else
+	MARK_HEADER_AS_NOT_DELETED(item_header);
+	dataBlock->itemCount++;
+	return ITEM_DATA(item_header);
+#endif
+}
+#endif
