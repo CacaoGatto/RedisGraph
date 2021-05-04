@@ -377,7 +377,11 @@ Graph *Graph_New(size_t node_cap, size_t edge_cap) {
 size_t Graph_RequiredMatrixDim(const Graph *g) {
 	// Matrix dimensions should be at least:
 	// Number of nodes + number of deleted nodes.
+#ifdef LABEL_DATABLOCK
+    return ((g->nodes->itemCount >> 14) + 2) << 14;
+#else
 	return g->nodes->itemCount + array_len(g->nodes->deletedIdx);
+#endif
 }
 
 size_t Graph_NodeCount(const Graph *g) {

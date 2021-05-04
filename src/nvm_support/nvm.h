@@ -21,7 +21,7 @@ int fin_memkind();
 #if (defined NVM_BLOCK || defined NVM_FULL || defined NVM_MATRIX)
 
 #define NVM_INIT
-#define PMEM_MAX_SIZE (64L << 30)
+#define PMEM_MAX_SIZE (64LL << 30)
 
 struct mk_config {
     struct memkind *pmem_kind;

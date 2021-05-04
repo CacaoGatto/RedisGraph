@@ -18,6 +18,10 @@ static Record NodeByLabelScanNoOp(OpBase *opBase);
 static OpResult NodeByLabelScanReset(OpBase *opBase);
 static OpBase *NodeByLabelScanClone(const ExecutionPlan *plan, const OpBase *opBase);
 static void NodeByLabelScanFree(OpBase *opBase);
+#ifdef LABEL_DATABLOCK
+static Record NodeByLabelScanConsume_Label(OpBase *opBase);
+static Record NodeByLabelScanConsumeFromChild_Label(OpBase *opBase);
+#endif
 
 static inline int NodeByLabelScanToString(const OpBase *ctx, char *buf, uint buf_len) {
 	NodeByLabelScan *op = (NodeByLabelScan *)ctx;
@@ -207,3 +211,64 @@ static void NodeByLabelScanFree(OpBase *op) {
 	}
 }
 
+#ifdef LABEL_DATABLOCK
+static Record NodeByLabelScanConsumeFromChild_Label(OpBase *opBase) {
+    NodeByLabelScan *op = (NodeByLabelScan *)opBase;
+
+    // Try to get new nodeID.
+    GrB_Index nodeId;
+    bool depleted = true;
+    GxB_MatrixTupleIter_next(op->iter, NULL, &nodeId, &depleted);
+    /* depleted will be true in the following cases:
+     * 1. No iterator: GxB_MatrixTupleIter_next will fail and depleted will stay true. This scenario means
+     * that there was no consumption of a record from a child, otherwise there was an iterator.
+     * 2. Iterator depleted - For every child record the iterator finished the entire matrix scan and it needs to restart.
+     * The child record will be NULL if this is the op's first invocation or it has just been reset, in which case we
+     * should also enter this loop. */
+    while(depleted || op->child_record == NULL) {
+        // Try to get a record.
+        if(op->child_record) OpBase_DeleteRecord(op->child_record);
+        op->child_record = OpBase_Consume(op->op.children[0]);
+        if(op->child_record == NULL) return NULL;
+
+        // Got a record.
+        if(!op->iter) {
+            // Iterator wasn't set up until now.
+            GraphContext *gc = QueryCtx_GetGraphCtx();
+            Schema *schema = GraphContext_GetSchema(gc, op->n.label, SCHEMA_NODE);
+            // No label matrix, it might be created in the next iteration.
+            if(!schema) continue;
+            _ConstructIterator(op, schema); // OK to fail (invalid range) iter will be depleted.
+        } else {
+            // Iterator depleted - reset.
+            // TODO: GxB_MatrixTupleIter_reset
+            _ResetIterator(op);
+        }
+        // Try to get new NodeID.
+        GxB_MatrixTupleIter_next(op->iter, NULL, &nodeId, &depleted);
+    }
+
+    // We've got a record and NodeID.
+    // Clone the held Record, as it will be freed upstream.
+    Record r = OpBase_CloneRecord(op->child_record);
+    // Populate the Record with the actual node.
+    _UpdateRecord(op, r, nodeId);
+    return r;
+}
+
+static Record NodeByLabelScanConsume_Label(OpBase *opBase) {
+    NodeByLabelScan *op = (NodeByLabelScan *)opBase;
+
+    GrB_Index nodeId;
+    bool depleted = false;
+    GxB_MatrixTupleIter_next(op->iter, NULL, &nodeId, &depleted);
+    if(depleted) return NULL;
+
+    Record r = OpBase_CreateRecord((OpBase *)op);
+
+    // Populate the Record with the actual node.
+    _UpdateRecord(op, r, nodeId);
+
+    return r;
+}
+#endif

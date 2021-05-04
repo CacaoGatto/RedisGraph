@@ -65,7 +65,7 @@ inline void *DataBlock_AllocateItemOutOfOrder_Label(DataBlock *dataBlock, uint64
     return item_header;
 #else
 	MARK_HEADER_AS_NOT_DELETED(item_header);
-	dataBlock->itemCount++;
+	//dataBlock->itemCount++;
 	return ITEM_DATA(item_header);
 #endif
 }

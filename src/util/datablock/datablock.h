@@ -123,7 +123,7 @@ void DataBlock_SetBitmap(const DataBlock *dataBlock, uint64_t idx, bool bit);
 
 #ifdef LABEL_DATABLOCK
 
-Block *DataBlock_GetFirstBlockByLabel(DataBlock *dataBlock, int label);
+int DataBlock_GetFirstBlockNumByLabel(DataBlock *dataBlock, int label);
 
 uint64_t DataBlock_AllocateItem_Label(DataBlock *dataBlock, int label);
 

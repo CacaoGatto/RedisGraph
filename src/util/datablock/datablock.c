@@ -151,7 +151,11 @@ DataBlockIterator *DataBlock_Scan(const DataBlock *dataBlock) {
 
 	// Deleted items are skipped, we're about to perform
 	// array_len(dataBlock->deletedIdx) skips during out scan.
+#ifdef LABEL_DATABLOCK
+    int64_t endPos = dataBlock->blockCount << 14;
+#else
 	int64_t endPos = dataBlock->itemCount + array_len(dataBlock->deletedIdx);
+#endif
 	return DataBlockIterator_New(startBlock, 0, endPos, 1);
 }
 
@@ -323,6 +327,22 @@ void _DataBlock_AddBlocks_Label(DataBlock *dataBlock, uint blockCount, int last,
 	dataBlock->itemCap = dataBlock->blockCount * DATABLOCK_BLOCK_CAP;
 }
 
+void DataBlock_AccommodateBlock_Label(DataBlock *dataBlock, int blockCount, int last, int label) {
+    int current = last;
+    int to_alloc = blockCount;
+    int index = dataBlock->header[last].index;
+    for (; current < dataBlock->blockCount; current++) {
+        if (dataBlock->header[current].label_id == UNKNOWN_LABEL) {
+            dataBlock->header[last].label_next = current;
+            _DataBlock_InitBlock_Label(&(dataBlock->header[current]), label, ++index, -1);
+            to_alloc--;
+            last = current;
+        }
+        if (!to_alloc) return;
+    }
+    _DataBlock_AddBlocks_Label(dataBlock, to_alloc, last, label);
+}
+
 int DataBlock_GetFirstBlockNumByLabel(DataBlock *dataBlock, int label) {
     uint blockCount = dataBlock->blockCount;
     int i;
@@ -341,7 +361,8 @@ int DataBlock_GetFirstAvailBlockNumByLabel(DataBlock *dataBlock, int label) {
     while (idx > -1) {
         if (dataBlock->header[idx].count >= DATABLOCK_BLOCK_CAP && array_len(dataBlock->header[idx].deletedIdx) <= 0) {
             if (dataBlock->header[idx].label_next == -1) {
-                _DataBlock_AddBlocks_Label(dataBlock, dataBlock->header[idx].index + 1, idx, label);
+                int block_to_alloc = 1; // dataBlock->header[idx].index + 1;
+                DataBlock_AccommodateBlock_Label(dataBlock, block_to_alloc, idx, label);
             }
             idx = dataBlock->header[idx].label_next;
         } else return idx;
