@@ -10,8 +10,8 @@
 
 Block *Block_New(uint itemSize, uint capacity) {
 	ASSERT(itemSize > 0);
-#ifdef NVM_BLOCK
-	Block *block = nvm_calloc(1, sizeof(Block) + (capacity * itemSize));
+#ifdef RESET_RM
+	Block *block = tg_calloc(1, sizeof(Block) + (capacity * itemSize));
 #else
 	Block *block = rm_calloc(1, sizeof(Block) + (capacity * itemSize));
 #endif
@@ -21,10 +21,6 @@ Block *Block_New(uint itemSize, uint capacity) {
 
 void Block_Free(Block *block) {
 	ASSERT(block != NULL);
-#ifdef NVM_BLOCK
-	nvm_free(block);
-#else
 	rm_free(block);
-#endif
 }
 

@@ -37,6 +37,9 @@ OpBase *NewNodeByLabelScanOp(const ExecutionPlan *plan, NodeScanCtx n) {
 	op->g = gc->g;
 	op->n = n;
 	op->iter = NULL;
+#ifdef LABEL_ITERATOR
+	op->iter_label = NULL;
+#endif
 	op->child_record = NULL;
 	// Defaults to [0...UINT64_MAX].
 	op->id_range = UnsignedRange_New();

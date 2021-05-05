@@ -1,6 +1,23 @@
 #include "nvm.h"
 
-#if (defined NVM_INIT)
+#ifdef RESET_RM
+
+void* dram_malloc(size_t size) {
+    return memkind_malloc(MEMKIND_DEFAULT, size);
+}
+void* dram_calloc(size_t nelem, size_t elemsz) {
+    return memkind_calloc(MEMKIND_DEFAULT, nelem, elemsz);
+}
+void* dram_realloc(void *p, size_t n) {
+    return memkind_realloc(MEMKIND_DEFAULT, p, n);
+}
+void dram_free(void* ptr) {
+    memkind_free(MEMKIND_DEFAULT, ptr);
+}
+
+#endif
+
+#ifdef NVM_MATRIX
 
 struct mk_config mk_cfg;
 
@@ -53,9 +70,5 @@ int fin_memkind() {
     }
     return 0;
 }
-
-#elif PERSIST_USE
-
-
 
 #endif

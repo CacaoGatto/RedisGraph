@@ -6,9 +6,41 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/*
+ * MODE:
+ *
+ * NVM_NONE     NVM_BLOCK       NVM_MATRIX      NVM_LAYOUT      NVM_ALL
+ *
+ * only-dram    only-pmem       only-dram       only-pmem       only-pmem
+ *
+ */
+
 //#define NVM_MATRIX
 //#define NVM_BLOCK
-//#define NVM_FULL
+//#define NVM_LAYOUT
+
+#if (defined(NVM_BLOCK) || defined(NVM_LAYOUT) || defined(NVM_MATRIX))
+
+#define HYBRID_MEMORY
+
+#endif
+
+#if (defined(NVM_BLOCK) || defined(NVM_LAYOUT))
+
+#define RESET_RM
+
+#endif
+
+#ifdef RESET_RM
+
+void* dram_malloc(size_t size);
+void* dram_calloc(size_t nelem, size_t elemsz);
+void* dram_realloc(void *p, size_t n);
+void dram_free(void* ptr);
+
+#endif
+
+#ifdef NVM_MATRIX
 
 int init_memkind(char* path);
 int is_nvm_addr(void* ptr);
@@ -18,9 +50,6 @@ void* nvm_realloc(void *p, size_t n);
 void nvm_free(void* ptr);
 int fin_memkind();
 
-#if (defined NVM_BLOCK || defined NVM_FULL || defined NVM_MATRIX)
-
-#define NVM_INIT
 #define PMEM_MAX_SIZE (64LL << 30)
 
 struct mk_config {
@@ -29,10 +58,6 @@ struct mk_config {
 };
 
 extern struct mk_config mk_cfg;
-
-#elif PERSIST_USE
-
-struct memkind *pmem_kind = NULL;
 
 #endif
 

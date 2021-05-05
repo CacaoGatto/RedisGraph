@@ -118,6 +118,8 @@ void *DataBlockLabelIterator_Next(DataBlockIterator *iter, int label, uint64_t *
         iter->_block_pos += iter->_step;
         iter->_current_pos += iter->_step;
 
+        //int itemCount = ((DataBlock *)(iter->dataBlock))->header[current_position >> 14].count;
+
         // Advance to next block if current block consumed.
         if(iter->_block_pos >= DATABLOCK_BLOCK_CAP) {
             iter->_block_pos -= DATABLOCK_BLOCK_CAP;
@@ -125,7 +127,7 @@ void *DataBlockLabelIterator_Next(DataBlockIterator *iter, int label, uint64_t *
             if (next_index > -1) iter->_current_block = ((DataBlock *)(iter->dataBlock))->blocks[next_index];
             else {
                 iter->_current_block = NULL;
-                return NULL;
+                // return NULL;
             }
             iter->_current_pos = next_index << 14;
         }

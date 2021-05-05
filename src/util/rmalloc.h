@@ -8,41 +8,53 @@
 
 #ifdef REDIS_MODULE_TARGET /* Set this when compiling your code as a module */
 
-static inline void *rm_malloc(size_t n) {
-#ifdef NVM_FULL
-	return nvm_malloc(n);
-#endif
+#ifdef RESET_RM
+
+static inline void *tg_malloc(size_t n) {
 	return RedisModule_Alloc(n);
 }
-static inline void *rm_calloc(size_t nelem, size_t elemsz) {
-#ifdef NVM_FULL
-	return nvm_calloc(nelem, elemsz);
-#endif
+static inline void *tg_calloc(size_t nelem, size_t elemsz) {
 	return RedisModule_Calloc(nelem, elemsz);
 }
-static inline void *rm_realloc(void *p, size_t n) {
-#ifdef NVM_FULL
-	return nvm_realloc(p, n);
-#endif
-#if (defined(NVM_BLOCK) || defined(NVM_MATRIX))
-	if (is_nvm_addr(p)) {
-		return nvm_realloc(p, n);
-	}
-#endif
+static inline void *tg_realloc(void *p, size_t n) {
 	return RedisModule_Realloc(p, n);
 }
-static inline void rm_free(void *p) {
-#ifdef NVM_FULL
-	nvm_free(p);
-	return;
-#endif
-#if (defined(NVM_BLOCK) || defined(NVM_MATRIX))
-	if (is_nvm_addr(p)) {
-		nvm_free(p);
-		return;
-	}
-#endif
+static inline void tg_free(void *p) {
 	RedisModule_Free(p);
+}
+
+#endif
+
+static inline void *rm_malloc(size_t n) {
+#ifdef RESET_RM
+    return dram_malloc(n);
+#else
+	return RedisModule_Alloc(n);
+#endif
+}
+static inline void *rm_calloc(size_t nelem, size_t elemsz) {
+#ifdef RESET_RM
+	return dram_calloc(nelem, elemsz);
+#else
+	return RedisModule_Calloc(nelem, elemsz);
+#endif
+}
+static inline void *rm_realloc(void *p, size_t n) {
+#ifdef HYBRID_MEMORY
+	struct memkind *kind = memkind_detect_kind(p);
+	return memkind_realloc(kind, p, n);
+#else
+	return RedisModule_Realloc(p, n);
+#endif
+}
+static inline void rm_free(void *p) {
+#ifdef HYBRID_MEMORY
+	struct memkind *kind = memkind_detect_kind(p);
+	memkind_free(kind, p);
+	return;
+#else
+	RedisModule_Free(p);
+#endif
 }
 static inline char *rm_strdup(const char *s) {
 	return RedisModule_Strdup(s);
