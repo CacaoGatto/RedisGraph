@@ -86,8 +86,8 @@ static void _DataBlock_AddBlocks(DataBlock *dataBlock, uint blockCount) {
 		dataBlock->header[i].index = -1;
 		dataBlock->header[i].deletedIdx = NULL;
 #ifdef LABEL_ITERATOR
-		dataBlock->blocks[i]->header = &(dataBlock->header[i]);
-        dataBlock->blocks[i]->index = i;
+		dataBlock->blocks[i]->label_next = -1;
+        dataBlock->blocks[i]->label = UNKNOWN_LABEL;
 #endif
 #endif
 		if(i > 0) dataBlock->blocks[i - 1]->next = dataBlock->blocks[i];
@@ -302,7 +302,13 @@ void _DataBlock_AddBlocks_Label(DataBlock *dataBlock, uint blockCount, int last,
 	ASSERT(dataBlock && blockCount > 0);
 
 	uint prevBlockCount = dataBlock->blockCount;
-	if (last > -1) dataBlock->header[last].label_next = prevBlockCount;
+	int last_index = dataBlock->header[last].index;
+	if (last > -1) {
+	    dataBlock->header[last].label_next = prevBlockCount;
+#ifdef LABEL_ITERATOR
+	    dataBlock->blocks[last]->label_next = prevBlockCount;
+#endif
+	}
 	dataBlock->blockCount += blockCount;
 	if(!dataBlock->blocks) {
 #ifdef NVM_BLOCK
@@ -320,10 +326,10 @@ void _DataBlock_AddBlocks_Label(DataBlock *dataBlock, uint blockCount, int last,
 	uint i;
 	for(i = prevBlockCount; i < dataBlock->blockCount; i++) {
 		dataBlock->blocks[i] = Block_New(dataBlock->itemSize, DATABLOCK_BLOCK_CAP);
-        _DataBlock_InitBlock_Label(&(dataBlock->header[i]), label, last + i - prevBlockCount + 1, i + 1);
+        _DataBlock_InitBlock_Label(&(dataBlock->header[i]), label, last_index + i - prevBlockCount + 1, i + 1);
 #ifdef LABEL_ITERATOR
-        dataBlock->blocks[i]->header = &(dataBlock->header[i]);
-        dataBlock->blocks[i]->index = i;
+        dataBlock->blocks[i]->label_next = i + 1;
+        dataBlock->blocks[i]->label = label;
 #endif
 		if(i > 0) {
 			dataBlock->blocks[i - 1]->next = dataBlock->blocks[i];
@@ -331,6 +337,9 @@ void _DataBlock_AddBlocks_Label(DataBlock *dataBlock, uint blockCount, int last,
 	}
 	dataBlock->blocks[i - 1]->next = NULL;
 	dataBlock->header[i - 1].label_next = -1;
+#ifdef LABEL_ITERATOR
+	dataBlock->blocks[i - 1]->label_next = -1;
+#endif
 
 	dataBlock->itemCap = dataBlock->blockCount * DATABLOCK_BLOCK_CAP;
 }
@@ -342,7 +351,13 @@ void DataBlock_AccommodateBlock_Label(DataBlock *dataBlock, int blockCount, int 
     for (; current < dataBlock->blockCount; current++) {
         if (dataBlock->header[current].label_id == UNKNOWN_LABEL) {
             dataBlock->header[last].label_next = current;
+#ifdef LABEL_ITERATOR
+            dataBlock->blocks[last]->label_next = current;
+#endif
             _DataBlock_InitBlock_Label(&(dataBlock->header[current]), label, ++index, -1);
+#ifdef LABEL_ITERATOR
+            dataBlock->blocks[current]->label = label;
+#endif
             to_alloc--;
             last = current;
         }
@@ -361,6 +376,9 @@ int DataBlock_GetFirstBlockNumByLabel(DataBlock *dataBlock, int label) {
     _DataBlock_AddBlocks(dataBlock, 1);
     INIT_NEW:
     _DataBlock_InitBlock_Label(&(dataBlock->header[i]), label, 0, -1);
+#ifdef LABEL_ITERATOR
+    dataBlock->blocks[i]->label = label;
+#endif
     return i;
 }
 

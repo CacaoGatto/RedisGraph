@@ -76,28 +76,30 @@ void DataBlockIterator_Free(DataBlockIterator *iter) {
 
 #ifdef LABEL_ITERATOR
 
+void DataBlockLabelIterator_RecordDataBlock(DataBlockIterator *iter, void * dataBlock) {
+    iter->dataBlock = dataBlock;
+}
+
 void DataBlockLabelIterator_iterate_range(DataBlockIterator *iter, uint64_t beginID, uint64_t endID) {
-    ASSERT(iter != NULL);
+    if (!iter) return;
 
     iter->_start_pos = beginID;
     iter->_end_pos = endID;
-    int new_start = beginID >> 14;
-    int old_start = iter->_start_block->index;
-    iter->_start_block += (new_start - old_start);
+    iter->_start_block = ((DataBlock *)(iter->dataBlock))->blocks[beginID >> 14];
     iter->_current_block = iter->_start_block;
     iter->_current_pos = beginID;
     iter->_block_pos = beginID % DATABLOCK_BLOCK_CAP;
 }
 
 void *DataBlockLabelIterator_Next(DataBlockIterator *iter, int label, uint64_t *id) {
-    ASSERT(iter != NULL);
+    if (!iter || !iter->_current_block) return NULL;
 
     // Re-locate the start pos according to the label if necessary
-    while (label != ((block_info *)(iter->_current_block->header))->label_id) {
+    while (label != iter->_current_block->label) {
         iter->_current_block = iter->_current_block->next;
         if (iter->_current_block == NULL) break;
         iter->_block_pos = 0;
-        iter->_current_pos = iter->_current_block->index << 14;
+        iter->_current_pos = ((iter->_current_pos >> 14) + 1) << 14;
     }
 
     // Set default.
@@ -110,6 +112,8 @@ void *DataBlockLabelIterator_Next(DataBlockIterator *iter, int label, uint64_t *
         Block *block = iter->_current_block;
         item_header = (DataBlockItemHeader *)block->data + (iter->_block_pos * block->itemSize);
 
+        uint64_t current_position = iter->_current_pos;
+
         // Advance to next position.
         iter->_block_pos += iter->_step;
         iter->_current_pos += iter->_step;
@@ -117,14 +121,18 @@ void *DataBlockLabelIterator_Next(DataBlockIterator *iter, int label, uint64_t *
         // Advance to next block if current block consumed.
         if(iter->_block_pos >= DATABLOCK_BLOCK_CAP) {
             iter->_block_pos -= DATABLOCK_BLOCK_CAP;
-            int next_index = ((block_info *)(iter->_current_block->header))->label_next;
-            if (next_index > -1) iter->_current_block += (next_index - iter->_current_block->index);
-            else iter->_current_block = NULL;
+            int next_index = iter->_current_block->label_next;
+            if (next_index > -1) iter->_current_block = ((DataBlock *)(iter->dataBlock))->blocks[next_index];
+            else {
+                iter->_current_block = NULL;
+                return NULL;
+            }
+            iter->_current_pos = next_index << 14;
         }
 
         if(!IS_ITEM_DELETED(item_header)) {
             item = ITEM_DATA(item_header);
-            if(id) *id = iter->_current_pos - iter->_step;
+            if(id) *id = current_position;
             break;
         }
     }

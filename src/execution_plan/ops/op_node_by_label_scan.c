@@ -224,7 +224,8 @@ static void NodeByLabelScanFree(OpBase *op) {
 
 static void _ConstructIterator_Label(NodeByLabelScan *op, Schema *schema) {
     GraphContext *gc = QueryCtx_GetGraphCtx();
-    DataBlockIterator_New(gc->g->nodes->blocks[0], 0, gc->g->nodes->blockCount << 14, 1);
+    op->iter_label = DataBlockIterator_New(gc->g->nodes->blocks[0], 0, gc->g->nodes->blockCount << 14, 1);
+    DataBlockLabelIterator_RecordDataBlock(op->iter_label, gc->g->nodes);
     NodeID minId = op->id_range->include_min ? op->id_range->min : op->id_range->min + 1;
     NodeID maxId = op->id_range->include_max ? op->id_range->max : op->id_range->max - 1;
     DataBlockLabelIterator_iterate_range(op->iter_label, minId, maxId);
@@ -282,7 +283,7 @@ static Record NodeByLabelScanConsumeFromChild_Label(OpBase *opBase) {
         if(op->child_record == NULL) return NULL;
 
         // Got a record.
-        if(!op->iter) {
+        if(!op->iter_label) {
             // Iterator wasn't set up until now.
             GraphContext *gc = QueryCtx_GetGraphCtx();
             Schema *schema = GraphContext_GetSchema(gc, op->n.label, SCHEMA_NODE);

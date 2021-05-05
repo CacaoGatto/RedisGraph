@@ -8,9 +8,6 @@
 
 #include <stdint.h>
 #include "../block.h"
-#ifdef LABEL_ITERATOR
-#include "datablock.h"
-#endif
 
 /* Datablock iterator iterates over items within a datablock. */
 
@@ -22,6 +19,9 @@ typedef struct {
 	uint64_t _current_pos;			// Iterator current position.
 	uint64_t _end_pos;				// Iterator won't pass end position.
 	uint _step;						// Increase current_pos by step each iteration.
+#ifdef LABEL_ITERATOR
+    void *dataBlock;
+#endif
 } DataBlockIterator;
 
 // Creates a new datablock iterator.
@@ -52,6 +52,8 @@ void DataBlockIterator_Reset(DataBlockIterator *iter);
 void DataBlockIterator_Free(DataBlockIterator *iter);
 
 #ifdef LABEL_ITERATOR
+
+void DataBlockLabelIterator_RecordDataBlock(DataBlockIterator *iter, void * dataBlock);
 
 void DataBlockLabelIterator_iterate_range(DataBlockIterator *iter, uint64_t beginID, uint64_t endID);
 

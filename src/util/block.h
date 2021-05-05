@@ -22,8 +22,8 @@ typedef struct Block {
 	size_t itemSize;        // Size of a single item in bytes.
 	struct Block *next;     // Pointer to next block.
 #ifdef LABEL_ITERATOR
-    void *header;
-    int index;
+    int label;
+    int label_next;
 #endif
 	unsigned char data[];   // Item array. MUST BE LAST MEMBER OF THE STRUCT!
 } Block;
