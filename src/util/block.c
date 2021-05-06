@@ -10,7 +10,7 @@
 
 Block *Block_New(uint itemSize, uint capacity) {
 	ASSERT(itemSize > 0);
-#ifdef RESET_RM
+#ifdef SLOW_BLOCK
 	Block *block = tg_calloc(1, sizeof(Block) + (capacity * itemSize));
 #else
 	Block *block = rm_calloc(1, sizeof(Block) + (capacity * itemSize));

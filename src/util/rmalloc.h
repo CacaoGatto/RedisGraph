@@ -51,7 +51,6 @@ static inline void rm_free(void *p) {
 #ifdef HYBRID_MEMORY
 	struct memkind *kind = memkind_detect_kind(p);
 	memkind_free(kind, p);
-	return;
 #else
 	RedisModule_Free(p);
 #endif

@@ -16,7 +16,7 @@
  */
 
 //#define NVM_MATRIX
-//#define NVM_BLOCK
+#define NVM_BLOCK
 //#define NVM_LAYOUT
 
 #if (defined(NVM_BLOCK) || defined(NVM_LAYOUT) || defined(NVM_MATRIX))
@@ -28,6 +28,8 @@
 #if (defined(NVM_BLOCK) || defined(NVM_LAYOUT))
 
 #define RESET_RM
+//#define SLOW_BLOCK
+//#define SLOW_ENTITY
 
 #endif
 

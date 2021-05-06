@@ -75,7 +75,7 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
 
 #ifdef NVM_MATRIX
     GrB_Info res = GxB_init(GrB_NONBLOCKING, nvm_malloc, nvm_calloc, nvm_realloc, nvm_free, true);
-#elif NVM_LAYOUT
+#elif (defined(NVM_LAYOUT))
 	GrB_Info res = GxB_init(GrB_NONBLOCKING, tg_malloc, tg_calloc, tg_realloc, tg_free, true);
 #else
 	GrB_Info res = GxB_init(GrB_NONBLOCKING, rm_malloc, rm_calloc, rm_realloc, rm_free, true);

@@ -60,11 +60,7 @@ static void _DataBlock_AddBlocks(DataBlock *dataBlock, uint blockCount) {
 	uint prevBlockCount = dataBlock->blockCount;
 	dataBlock->blockCount += blockCount;
 	if(!dataBlock->blocks) {
-#ifdef RESET_RM
-        dataBlock->blocks = tg_malloc(sizeof(Block *) * dataBlock->blockCount);
-#else
         dataBlock->blocks = rm_malloc(sizeof(Block *) * dataBlock->blockCount);
-#endif
 #ifdef LABEL_DATABLOCK
         dataBlock->header = rm_malloc(sizeof(block_info) * dataBlock->blockCount);
 #endif
@@ -122,11 +118,7 @@ static inline DataBlockItemHeader *DataBlock_GetItemHeader(const DataBlock *data
 //------------------------------------------------------------------------------
 
 DataBlock *DataBlock_New(uint64_t itemCap, uint itemSize, fpDestructor fp) {
-#ifdef RESET_RM
-	DataBlock *dataBlock = tg_malloc(sizeof(DataBlock));
-#else
 	DataBlock *dataBlock = rm_malloc(sizeof(DataBlock));
-#endif
 	dataBlock->itemCount = 0;
 	dataBlock->itemSize = itemSize + ITEM_HEADER_SIZE;
 	dataBlock->blockCount = 0;
@@ -311,11 +303,7 @@ void _DataBlock_AddBlocks_Label(DataBlock *dataBlock, uint blockCount, int last,
 	}
 	dataBlock->blockCount += blockCount;
 	if(!dataBlock->blocks) {
-#ifdef RESET_RM
-        dataBlock->blocks = tg_malloc(sizeof(Block *) * dataBlock->blockCount);
-#else
         dataBlock->blocks = rm_malloc(sizeof(Block *) * dataBlock->blockCount);
-#endif
         dataBlock->header = rm_malloc(sizeof(block_info) * dataBlock->blockCount);
     }
 	else {
