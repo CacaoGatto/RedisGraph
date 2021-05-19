@@ -2,6 +2,21 @@
 
 struct memkind *pmem_kind = NULL;
 
+void init_memkind() {
+    char nvm_path[32] = "/home/yuxiuyuan/mnt";
+    int status = memkind_check_dax_path(nvm_path);
+    if (!status) {
+        fprintf(stdout, "PMEM kind %s is on DAX-enabled file system.\n", nvm_path);
+    } else {
+        fprintf(stdout, "PMEM kind %s is not on DAX-enabled file system.\n",
+                nvm_path);
+        exit(222);
+    }
+    int err = memkind_create_pmem(nvm_path, (64LL << 30), &pmem_kind);
+    if (err) fprintf(stdout, "Fail to create PMEM pool !\n");
+    else fprintf(stdout, "PMEM pool created !\n");
+}
+
 void set_memkind(void* kind_to_set) {
     pmem_kind = (struct memkind *)kind_to_set;
 }

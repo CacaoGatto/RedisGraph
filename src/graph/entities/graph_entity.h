@@ -64,6 +64,7 @@ typedef struct {
 /* Adds property to entity
  * returns - reference to newly added property. */
 bool GraphEntity_AddProperty(GraphEntity *e, Attribute_ID attr_id, SIValue value);
+bool GraphEntity_AddPmemProperty(GraphEntity *e, Attribute_ID attr_id, SIValue value);
 
 /* Retrieves entity's property
  * NOTE: If the key does not exist, we return the special

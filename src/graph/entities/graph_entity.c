@@ -54,11 +54,7 @@ bool GraphEntity_AddProperty(GraphEntity *e, Attribute_ID attr_id, SIValue value
 	if(SIValue_IsNull(value)) return false;
 
 	if(e->entity->properties == NULL) {
-#ifdef SLOW_ENTITY
-		e->entity->properties = nvm_malloc(sizeof(EntityProperty));
-#else
 		e->entity->properties = rm_malloc(sizeof(EntityProperty));
-#endif
 	} else {
 		e->entity->properties = rm_realloc(e->entity->properties,
 										   sizeof(EntityProperty) * (e->entity->prop_count + 1));
@@ -70,6 +66,33 @@ bool GraphEntity_AddProperty(GraphEntity *e, Attribute_ID attr_id, SIValue value
 	e->entity->prop_count++;
 
 	return true;
+}
+
+bool GraphEntity_AddPmemProperty(GraphEntity *e, Attribute_ID attr_id, SIValue value) {
+    ASSERT(e);
+    if(SIValue_IsNull(value)) return false;
+
+    if(e->entity->properties == NULL) {
+#ifdef SLOW_ENTITY
+        e->entity->properties = nvm_malloc(sizeof(EntityProperty));
+#else
+        e->entity->properties = rm_malloc(sizeof(EntityProperty));
+#endif
+    } else {
+        e->entity->properties = rm_realloc(e->entity->properties,
+                                           sizeof(EntityProperty) * (e->entity->prop_count + 1));
+    }
+
+    int prop_idx = e->entity->prop_count;
+    e->entity->properties[prop_idx].id = attr_id;
+#ifdef NVM_BLOCK
+    e->entity->properties[prop_idx].value = SI_ClonePmemValue(value);
+#else
+    e->entity->properties[prop_idx].value = SI_CloneValue(value);
+#endif
+    e->entity->prop_count++;
+
+    return true;
 }
 
 SIValue *GraphEntity_GetProperty(const GraphEntity *e, Attribute_ID attr_id) {

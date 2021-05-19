@@ -98,6 +98,12 @@ SIValue SI_DuplicateStringVal(const char *s) {
 	};
 }
 
+SIValue SI_DuplicatePmemStringVal(const char *s) {
+    return (SIValue) {
+            .stringval = nvm_strdup(s), .type = T_STRING, .allocation = M_SELF
+    };
+}
+
 SIValue SI_ConstStringVal(char *s) {
 	return (SIValue) {
 		.stringval = s, .type = T_STRING, .allocation = M_CONST
@@ -168,6 +174,46 @@ SIValue SI_CloneValue(const SIValue v) {
 	clone.ptrval = rm_malloc(size);
 	memcpy(clone.ptrval, v.ptrval, size);
 	return clone;
+}
+
+SIValue SI_ClonePmemValue(const SIValue v) {
+    if(v.allocation == M_NONE) return v; // Stack value; no allocation necessary.
+
+    if(v.type == T_STRING) {
+        // Allocate a new copy of the input's string value.
+        return SI_DuplicatePmemStringVal(v.stringval);
+    }
+
+    if(v.type == T_ARRAY) {
+        return SIArray_Clone(v);
+    }
+
+    if(v.type == T_PATH) {
+        return SIPath_Clone(v);
+    }
+
+    if(v.type == T_MAP) {
+        return Map_Clone(v);
+    }
+
+    // Copy the memory region for Node and Edge values. This does not modify the
+    // inner Entity pointer to the value's properties.
+    SIValue clone;
+    clone.type = v.type;
+    clone.allocation = M_SELF;
+
+    size_t size = 0;
+    if(v.type == T_NODE) {
+        size = sizeof(Node);
+    } else if(v.type == T_EDGE) {
+        size = sizeof(Edge);
+    } else {
+        ASSERT(false && "Encountered heap-allocated SIValue of unhandled type");
+    }
+
+    clone.ptrval = nvm_malloc(size);
+    memcpy(clone.ptrval, v.ptrval, size);
+    return clone;
 }
 
 SIValue SI_ShallowCloneValue(const SIValue v) {

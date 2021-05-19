@@ -69,14 +69,8 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
         return REDISMODULE_ERR;
     }
 
-    void *rm_kind = RedisModule_GetPmemKind();
-    set_memkind(rm_kind);
-
 #ifdef HYBRID_MEMORY
-	if (rm_kind == MEMKIND_DEFAULT) {
-        RedisModule_Log(ctx, "warning", "Can't detect proper PMEM KIND !");
-        exit(233);
-	}
+	init_memkind();
 #endif
 
 #ifdef NVM_MATRIX

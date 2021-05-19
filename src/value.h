@@ -122,6 +122,7 @@ SIValue SI_ShareValue(const SIValue v);
 
 // SI_CloneValue creates an SIValue that duplicates all of the original's allocations.
 SIValue SI_CloneValue(const SIValue v);
+SIValue SI_ClonePmemValue(const SIValue v);
 
 // SI_CloneValue creates an SIValue that duplicates all of the original's self-owned or volatile allocations.
 SIValue SI_ShallowCloneValue(const SIValue v);

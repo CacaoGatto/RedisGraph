@@ -626,8 +626,6 @@ REDISMODULE_API void (*RedisModule_SaveString)(RedisModuleIO *io, RedisModuleStr
 REDISMODULE_API void (*RedisModule_SaveStringBuffer)(RedisModuleIO *io, const char *str, size_t len) REDISMODULE_ATTR;
 REDISMODULE_API RedisModuleString * (*RedisModule_LoadString)(RedisModuleIO *io) REDISMODULE_ATTR;
 REDISMODULE_API char * (*RedisModule_LoadStringBuffer)(RedisModuleIO *io, size_t *lenptr) REDISMODULE_ATTR;
-REDISMODULE_API char * (*RedisModule_LoadPmemStringBuffer)(RedisModuleIO *io, size_t *lenptr) REDISMODULE_ATTR;
-REDISMODULE_API void * (*RedisModule_GetPmemKind)() REDISMODULE_ATTR;
 REDISMODULE_API void (*RedisModule_SaveDouble)(RedisModuleIO *io, double value) REDISMODULE_ATTR;
 REDISMODULE_API double (*RedisModule_LoadDouble)(RedisModuleIO *io) REDISMODULE_ATTR;
 REDISMODULE_API void (*RedisModule_SaveFloat)(RedisModuleIO *io, float value) REDISMODULE_ATTR;
@@ -879,8 +877,6 @@ static int RedisModule_Init(RedisModuleCtx *ctx, const char *name, int ver, int 
     REDISMODULE_GET_API(SaveStringBuffer);
     REDISMODULE_GET_API(LoadString);
     REDISMODULE_GET_API(LoadStringBuffer);
-    REDISMODULE_GET_API(LoadPmemStringBuffer);
-    REDISMODULE_GET_API(GetPmemKind);
     REDISMODULE_GET_API(SaveDouble);
     REDISMODULE_GET_API(LoadDouble);
     REDISMODULE_GET_API(SaveFloat);
