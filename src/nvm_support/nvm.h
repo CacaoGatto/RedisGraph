@@ -15,52 +15,33 @@
  *
  */
 
-//#define NVM_MATRIX
+#define NVM_MATRIX
 #define NVM_BLOCK
-//#define NVM_LAYOUT
 
-#if (defined(NVM_BLOCK) || defined(NVM_LAYOUT) || defined(NVM_MATRIX))
+#if (defined(NVM_BLOCK) || defined(NVM_MATRIX))
 
 #define HYBRID_MEMORY
 
 #endif
 
-#if (defined(NVM_BLOCK) || defined(NVM_LAYOUT))
+#ifdef NVM_BLOCK
 
-#define RESET_RM
 //#define SLOW_BLOCK
-//#define SLOW_ENTITY
+#define SLOW_ENTITY
 
 #endif
-
-#ifdef RESET_RM
 
 void* dram_malloc(size_t size);
 void* dram_calloc(size_t nelem, size_t elemsz);
 void* dram_realloc(void *p, size_t n);
 void dram_free(void* ptr);
 
-#endif
-
-#ifdef NVM_MATRIX
-
-int init_memkind(char* path);
+void set_memkind(void* kind_to_set);
 int is_nvm_addr(void* ptr);
 void* nvm_malloc(size_t size);
 void* nvm_calloc(size_t nelem, size_t elemsz);
 void* nvm_realloc(void *p, size_t n);
 void nvm_free(void* ptr);
 int fin_memkind();
-
-#define PMEM_MAX_SIZE (64LL << 30)
-
-struct mk_config {
-    struct memkind *pmem_kind;
-    long long gb_size;
-};
-
-extern struct mk_config mk_cfg;
-
-#endif
 
 #endif

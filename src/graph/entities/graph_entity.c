@@ -55,7 +55,7 @@ bool GraphEntity_AddProperty(GraphEntity *e, Attribute_ID attr_id, SIValue value
 
 	if(e->entity->properties == NULL) {
 #ifdef SLOW_ENTITY
-		e->entity->properties = tg_malloc(sizeof(EntityProperty));
+		e->entity->properties = nvm_malloc(sizeof(EntityProperty));
 #else
 		e->entity->properties = rm_malloc(sizeof(EntityProperty));
 #endif

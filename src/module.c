@@ -64,19 +64,23 @@ static void _PrepareModuleGlobals(RedisModuleCtx *ctx, RedisModuleString **argv,
 int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) {
 	/* TODO: when module unloads call GrB_finalize. */
 
-#ifdef NVM_MATRIX
-	char nvm_path[32] = "/home/yuxiuyuan/mnt";
-	int mk_res = init_memkind(nvm_path);
-	if (mk_res) {
-		fprintf(stdout, "Fail to create PMEM room at %s .\n", nvm_path);
-		exit(233);
+    if(RedisModule_Init(ctx, "graph", REDISGRAPH_MODULE_VERSION,
+                        REDISMODULE_APIVER_1) == REDISMODULE_ERR) {
+        return REDISMODULE_ERR;
+    }
+
+    void *rm_kind = RedisModule_GetPmemKind();
+    set_memkind(rm_kind);
+
+#ifdef HYBRID_MEMORY
+	if (rm_kind == MEMKIND_DEFAULT) {
+        RedisModule_Log(ctx, "warning", "Can't detect proper PMEM KIND !");
+        exit(233);
 	}
 #endif
 
 #ifdef NVM_MATRIX
-    GrB_Info res = GxB_init(GrB_NONBLOCKING, nvm_malloc, nvm_calloc, nvm_realloc, nvm_free, true);
-#elif (defined(NVM_LAYOUT))
-	GrB_Info res = GxB_init(GrB_NONBLOCKING, tg_malloc, tg_calloc, tg_realloc, tg_free, true);
+    GrB_Info res = GxB_init(GrB_NONBLOCKING, nvm_malloc, nvm_calloc, rm_realloc, rm_free, true);
 #else
 	GrB_Info res = GxB_init(GrB_NONBLOCKING, rm_malloc, rm_calloc, rm_realloc, rm_free, true);
 #endif
@@ -87,11 +91,6 @@ int RedisModule_OnLoad(RedisModuleCtx *ctx, RedisModuleString **argv, int argc) 
 	}
 
 	GxB_set(GxB_FORMAT, GxB_BY_ROW); // all matrices in CSR format
-
-	if(RedisModule_Init(ctx, "graph", REDISGRAPH_MODULE_VERSION,
-						REDISMODULE_APIVER_1) == REDISMODULE_ERR) {
-		return REDISMODULE_ERR;
-	}
 
 	// validate minimum redis-server version
 	if(!Redis_Version_GreaterOrEqual(MIN_REDIS_VERION_MAJOR,

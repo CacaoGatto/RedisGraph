@@ -36,6 +36,32 @@ static SIValue _RdbLoadSIValue(RedisModuleIO *rdb) {
 	}
 }
 
+static SIValue _RdbLoadPmemSIValue(RedisModuleIO *rdb) {
+    /* Format:
+     * SIType
+     * Value */
+    SIType t = RedisModule_LoadUnsigned(rdb);
+    switch(t) {
+        case T_INT64:
+            return SI_LongVal(RedisModule_LoadSigned(rdb));
+        case T_DOUBLE:
+            return SI_DoubleVal(RedisModule_LoadDouble(rdb));
+        case T_STRING:
+            // Transfer ownership of the heap-allocated string to the
+            // newly-created SIValue
+            return SI_TransferStringVal(RedisModule_LoadPmemStringBuffer(rdb, NULL));
+        case T_BOOL:
+            return SI_BoolVal(RedisModule_LoadSigned(rdb));
+        case T_ARRAY:
+            return _RdbLoadSIArray(rdb);
+        case T_POINT:
+            return _RdbLoadPoint(rdb);
+        case T_NULL:
+        default: // currently impossible
+            return SI_NullVal();
+    }
+}
+
 static SIValue _RdbLoadPoint(RedisModuleIO *rdb) {
 	double lat = RedisModule_LoadDouble(rdb);
 	double lon = RedisModule_LoadDouble(rdb);
@@ -68,7 +94,11 @@ static void _RdbLoadEntity(RedisModuleIO *rdb, GraphContext *gc, GraphEntity *e)
 
 	for(int i = 0; i < propCount; i++) {
 		Attribute_ID attr_id = RedisModule_LoadUnsigned(rdb);
-		SIValue attr_value = _RdbLoadSIValue(rdb);
+#ifdef NVM_BLOCK
+		SIValue attr_value = _RdbLoadPmemSIValue(rdb);
+#else
+        SIValue attr_value = _RdbLoadSIValue(rdb);
+#endif
 		GraphEntity_AddProperty(e, attr_id, attr_value);
 		SIValue_Free(attr_value);
 	}

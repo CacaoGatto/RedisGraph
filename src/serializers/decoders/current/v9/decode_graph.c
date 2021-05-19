@@ -202,10 +202,10 @@ GraphContext *RdbLoadGraph_v9(RedisModuleIO *rdb) {
         rm_free(conv_info->ref_pool);
         rm_free(conv_info);
 #endif
-#if (defined(NVM_MATRIX) || defined(NVM_LAYOUT))
+#ifdef NVM_MATRIX
 		GrB_Info res = GxB_init(GrB_NONBLOCKING, rm_malloc, rm_calloc, rm_realloc, rm_free, true);
 		if(res != GrB_SUCCESS) {
-			RedisModule_Log(ctx, "notice", "GxB malloc reset error!!!");
+			RedisModule_Log(ctx, "warning", "GxB malloc reset error!!!");
 			exit(233);
 		}
 #endif
