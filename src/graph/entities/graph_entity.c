@@ -85,7 +85,7 @@ bool GraphEntity_AddPmemProperty(GraphEntity *e, Attribute_ID attr_id, SIValue v
 
     int prop_idx = e->entity->prop_count;
     e->entity->properties[prop_idx].id = attr_id;
-#ifdef NVM_BLOCK
+#ifdef NVM_PROP
     e->entity->properties[prop_idx].value = SI_ClonePmemValue(value);
 #else
     e->entity->properties[prop_idx].value = SI_CloneValue(value);

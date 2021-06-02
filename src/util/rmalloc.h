@@ -9,23 +9,29 @@
 #ifdef REDIS_MODULE_TARGET /* Set this when compiling your code as a module */
 
 static inline void *rm_malloc(size_t n) {
+#ifdef NVM_FULL
+    return nvm_malloc(n);
+#else
 	return RedisModule_Alloc(n);
+#endif
 }
 static inline void *rm_calloc(size_t nelem, size_t elemsz) {
+#ifdef NVM_FULL
+    return nvm_calloc(nelem, elemsz);
+#else
 	return RedisModule_Calloc(nelem, elemsz);
+#endif
 }
 static inline void *rm_realloc(void *p, size_t n) {
 #ifdef HYBRID_MEMORY
-	struct memkind *kind = memkind_detect_kind(p);
-	return memkind_realloc(kind, p, n);
+	return nvm_realloc(p, n);
 #else
 	return RedisModule_Realloc(p, n);
 #endif
 }
 static inline void rm_free(void *p) {
 #ifdef HYBRID_MEMORY
-	struct memkind *kind = memkind_detect_kind(p);
-	memkind_free(kind, p);
+    nvm_free(p);
 #else
 	RedisModule_Free(p);
 #endif

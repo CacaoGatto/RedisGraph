@@ -74,7 +74,7 @@ static void _DataBlock_AddBlocks(DataBlock *dataBlock, uint blockCount) {
 
 	uint i;
 	for(i = prevBlockCount; i < dataBlock->blockCount; i++) {
-		dataBlock->blocks[i] = Block_New(dataBlock->itemSize, DATABLOCK_BLOCK_CAP);
+		dataBlock->blocks[i] = Block_New_Data(dataBlock->itemSize, DATABLOCK_BLOCK_CAP);
 #ifdef LABEL_DATABLOCK
 		dataBlock->header[i].count = 0;
 		dataBlock->header[i].label_id = UNKNOWN_LABEL;
@@ -313,7 +313,7 @@ void _DataBlock_AddBlocks_Label(DataBlock *dataBlock, uint blockCount, int last,
 
 	uint i;
 	for(i = prevBlockCount; i < dataBlock->blockCount; i++) {
-		dataBlock->blocks[i] = Block_New(dataBlock->itemSize, DATABLOCK_BLOCK_CAP);
+		dataBlock->blocks[i] = Block_New_Data(dataBlock->itemSize, DATABLOCK_BLOCK_CAP);
         _DataBlock_InitBlock_Label(&(dataBlock->header[i]), label, last_index + i - prevBlockCount + 1, i + 1);
 #ifdef LABEL_ITERATOR
         dataBlock->blocks[i]->label_next = i + 1;

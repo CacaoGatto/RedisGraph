@@ -29,5 +29,6 @@ typedef struct Block {
 } Block;
 
 Block *Block_New(uint itemSize, uint capacity);
+Block *Block_New_Data(uint itemSize, uint capacity);
 void Block_Free(Block *block);
 

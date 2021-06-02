@@ -43,16 +43,32 @@ int is_nvm_addr(void* ptr) {
 }
 
 void* nvm_malloc(size_t size) {
+#ifdef NVM_THRESHOLD
+    if (size < ALLOC_THRESHOLD) return dram_malloc(size);
+#endif
     return memkind_malloc(pmem_kind, size);
 }
 
 void* nvm_calloc(size_t nelem, size_t elemsz) {
+#ifdef NVM_THRESHOLD
+    if (nelem * elemsz < ALLOC_THRESHOLD) return dram_calloc(nelem, elemsz);
+#endif
     return memkind_calloc(pmem_kind, nelem, elemsz);
 }
 
 void* nvm_realloc(void *p, size_t n) {
     struct memkind *temp_kind = memkind_detect_kind(p);
+#ifdef NVM_THRESHOLD
+    void *tp = memkind_realloc(temp_kind, p, n);
+    if (temp_kind == MEMKIND_DEFAULT ^ n < ALLOC_THRESHOLD) {
+        void *np = nvm_malloc(n);
+        memcpy(np, tp, n);
+        nvm_free(tp);
+        return np;
+    } else return tp;
+#else
     return memkind_realloc(temp_kind, p, n);
+#endif
 }
 
 void nvm_free(void* ptr) {

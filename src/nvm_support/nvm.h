@@ -9,25 +9,33 @@
 /*
  * MODE:
  *
- * NVM_NONE     NVM_BLOCK       NVM_MATRIX      NVM_LAYOUT      NVM_ALL
+ * NVM_NONE     NVM_PROP       NVM_MATRIX      NVM_LAYOUT      NVM_ALL
  *
  * only-dram    only-pmem       only-dram       only-pmem       only-pmem
  *
  */
 
-#define NVM_MATRIX
-#define NVM_BLOCK
+// #define NVM_MATRIX
+#define NVM_PROP
+// #define NVM_FULL
+// #define NVM_THRESHOLD
 
-#if (defined(NVM_BLOCK) || defined(NVM_MATRIX))
+#if (defined(NVM_PROP) || defined(NVM_MATRIX) || defined(NVM_FULL) || defined(NVM_THRESHOLD))
 
 #define HYBRID_MEMORY
 
 #endif
 
-#ifdef NVM_BLOCK
+#ifdef NVM_PROP
 
-//#define SLOW_BLOCK
-#define SLOW_ENTITY
+#define SLOW_BLOCK
+// #define SLOW_ENTITY
+
+#endif
+
+#ifdef NVM_THRESHOLD
+
+#define ALLOC_THRESHOLD 64
 
 #endif
 
