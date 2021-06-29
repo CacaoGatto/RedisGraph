@@ -88,6 +88,7 @@ void RdbLoadNodes_v9(RedisModuleIO *rdb, GraphContext *gc, uint64_t node_count) 
     // update the infos of conversion pool
     if (!conv_info) {
         conv_info = (ConversionInfo_t *)rm_malloc(sizeof(ConversionInfo_t));
+        conv_info->kind =
         conv_info->total_nodes = 0;
         conv_info->ref_pool = NULL;
     }

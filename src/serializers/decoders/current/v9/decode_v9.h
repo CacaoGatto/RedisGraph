@@ -11,6 +11,7 @@
 #ifdef LABEL_DATABLOCK
 
 typedef struct ConversionInfo {
+    struct memkind *kind;
     uint64_t total_nodes;
     NodeID *ref_pool;
 } ConversionInfo_t;

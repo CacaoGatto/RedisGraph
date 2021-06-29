@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define DEPENDENT_TEST
+
 /*
  * MODE:
  *
@@ -16,7 +18,7 @@
  */
 
 // #define NVM_MATRIX
-#define NVM_PROP
+// #define NVM_PROP
 // #define NVM_FULL
 // #define NVM_THRESHOLD
 
