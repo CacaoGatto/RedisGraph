@@ -1,5 +1,5 @@
 #include "nvm.h"
-
+#ifndef INDEPENDENT_TEST
 struct memkind *pmem_kind = NULL;
 
 void init_memkind() {
@@ -80,3 +80,5 @@ int fin_memkind() {
     int err = memkind_destroy_kind(pmem_kind);
     return err;
 }
+
+#endif

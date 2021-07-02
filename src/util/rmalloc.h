@@ -9,7 +9,7 @@
 #ifdef REDIS_MODULE_TARGET /* Set this when compiling your code as a module */
 
 static inline void *rm_malloc(size_t n) {
-#ifndef DEPENDENT_TEST
+#ifndef INDEPENDENT_TEST
     return RedisModule_Alloc(n);
 #elif (defined(NVM_FULL) || defined(NVM_THRESHOLD))
     return nvm_malloc(n);
@@ -18,7 +18,7 @@ static inline void *rm_malloc(size_t n) {
 #endif
 }
 static inline void *rm_calloc(size_t nelem, size_t elemsz) {
-#ifndef DEPENDENT_TEST
+#ifndef INDEPENDENT_TEST
     return RedisModule_Calloc(nelem, elemsz);
 #elif (defined(NVM_FULL) || defined(NVM_THRESHOLD))
     return nvm_calloc(nelem, elemsz);
@@ -27,7 +27,7 @@ static inline void *rm_calloc(size_t nelem, size_t elemsz) {
 #endif
 }
 static inline void *rm_realloc(void *p, size_t n) {
-#ifndef DEPENDENT_TEST
+#ifndef INDEPENDENT_TEST
     return RedisModule_Realloc(p, n);
 #elif defined(HYBRID_MEMORY)
 	return nvm_realloc(p, n);
@@ -36,7 +36,7 @@ static inline void *rm_realloc(void *p, size_t n) {
 #endif
 }
 static inline void rm_free(void *p) {
-#ifndef DEPENDENT_TEST
+#ifndef INDEPENDENT_TEST
     RedisModule_Free(p);
 #elif defined(HYBRID_MEMORY)
     nvm_free(p);
@@ -45,7 +45,7 @@ static inline void rm_free(void *p) {
 #endif
 }
 static inline char *rm_strdup(const char *s) {
-#ifndef DEPENDENT_TEST
+#ifndef INDEPENDENT_TEST
     return RedisModule_Strdup(s);
 #endif
     size_t l = strlen(s)+1;

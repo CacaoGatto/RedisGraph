@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define DEPENDENT_TEST
+#define INDEPENDENT_TEST
 
 /*
  * MODE:

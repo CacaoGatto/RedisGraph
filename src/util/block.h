@@ -9,10 +9,10 @@
 #include <stdlib.h>
 #include <sys/types.h>
 
-#define LABEL_DATABLOCK
+//#define LABEL_DATABLOCK
 
 #ifdef LABEL_DATABLOCK
-#define UNKNOWN_LABEL -2
+#define UNKNOWN_LABEL (-2)
 #define LABEL_ITERATOR
 #endif
 
